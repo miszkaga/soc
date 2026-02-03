@@ -2,8 +2,9 @@ import pandas as pd
 from openai import OpenAI
 import json
 import os
+from config import OPENAI_API_KEY, SOC2_MODEL
 
-client = OpenAI(api_key="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")
+client = OpenAI(api_key=OPENAI_API_KEY)
 INPUT_FILE = "controls.xlsx"
 OUTPUT_FILE = "sanitized_controls.xlsx"
 MAP_FILE = "sensitive_map.json"
