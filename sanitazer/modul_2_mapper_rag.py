@@ -5,16 +5,16 @@ import os
 import time
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
+from config import OPENAI_API_KEY, SOC2_MODEL
 
-client = OpenAI(api_key="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")
-API_KEY = "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"
+client = OpenAI(api_key=OPENAI_API_KEY)
 INPUT_FILE = "sanitized_controls.xlsx"
 OUTPUT_FILE = "mapped_controls_rag.xlsx"
 INDEX_PATH = "soc2_vector_index"
 
 def load_knowledge_base():
     if not os.path.exists(INDEX_PATH): raise FileNotFoundError("Run 'prepare_vectors.py' first.")
-    embeddings = OpenAIEmbeddings(api_key=API_KEY)
+    embeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
     return FAISS.load_local(INDEX_PATH, embeddings, allow_dangerous_deserialization=True)
 
 def query_tsc_context(vector_store, query_text):
