@@ -3,8 +3,9 @@ from openai import OpenAI
 import json
 import os
 import time
+from config import OPENAI_API_KEY, SOC2_MODEL
 
-client = OpenAI(api_key="REDACTED")
+client = OpenAI(api_key=OPENAI_API_KEY)
 INPUT_FILE = "mapped_controls_rag.xlsx"
 OUTPUT_FILE = "FINAL_SOC2_AUDIT_ENGLISH.xlsx"
 

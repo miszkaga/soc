@@ -4,9 +4,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
-
-# KONFIGURACJA API
-API_KEY = "REDACTED"
+from config import OPENAI_API_KEY, SOC2_MODEL
 
 def main():
     parser = argparse.ArgumentParser(description="Ingestia wielu plików PDF do bazy wektorowej.")
@@ -54,7 +52,7 @@ def main():
     # 3. Wektoryzacja
     print("-> Generowanie wektorów (OpenAI Embeddings)...")
     try:
-        embeddings = OpenAIEmbeddings(api_key=API_KEY)
+        embeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
         vector_store = FAISS.from_documents(chunks, embeddings)
 
         # 4. Zapis

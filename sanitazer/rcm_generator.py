@@ -1,4 +1,5 @@
 import pandas as pd
+from config import OPENAI_API_KEY, SOC2_MODEL
 
 # Realistic SOC 2 Controls (English) - Fully English Input
 audit_data = [
