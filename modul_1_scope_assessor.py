@@ -12,8 +12,10 @@ from openai import OpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from config import OPENAI_API_KEY, SOC2_MODEL
 
 # Configuration
+client = OpenAI(api_key=OPENAI_API_KEY)
 API_KEY = os.getenv("OPENAI_API_KEY", "")  # Use environment variable
 INDEX_PATH = "soc2_vector_index"
 SYSTEM_DESC_FILE = "system_description.txt"
