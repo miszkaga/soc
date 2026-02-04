@@ -1,17 +1,11 @@
 {
-    "FinTech Solutions Sp. z o.o.": "[ORGANIZACJA]",
-    "CrowdStrike Falcon": "[DOSTAWCA_ZEW]",
-    "AWS": "[DOSTAWCA_ZEW]",
-    "Jira": "[DOSTAWCA_ZEW]",
-    "Salesforce": "[DOSTAWCA_ZEW]",
-    "Baza Danych ProdDB": "[SYSTEM_WEW]",
-    "BambooHR": "[DOSTAWCA_ZEW]",
-    "Okta": "[DOSTAWCA_ZEW]",
-    "Warszawa HQ": "[LOKALIZACJA]",
-    "Datadog": "[DOSTAWCA_ZEW]",
-    "Slack": "[DOSTAWCA_ZEW]",
-    "CoreApp": "[SYSTEM_WEW]",
-    "GitHub": "[DOSTAWCA_ZEW]",
-    "PostgreSQL": "[DOSTAWCA_ZEW]",
-    "Google Workspace": "[DOSTAWCA_ZEW]"
+    "Okta": "[VENDOR]",
+    "AWS": "[VENDOR]",
+    "GitHub": "[VENDOR]",
+    "Jira": "[VENDOR]",
+    "Terraform": "[VENDOR]",
+    "Amazon RDS": "[VENDOR]",
+    "Amazon S3": "[VENDOR]",
+    "AWS CloudWatch": "[VENDOR]",
+    "CrowdStrike": "[VENDOR]"
 }

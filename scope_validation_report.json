@@ -1,25 +1,23 @@
 {
-  "phase": "PHASE_2_SCOPE_VALIDATION",
-  "timestamp": "2026-02-04T13:50:10.376965",
   "overall_status": "PASS",
-  "scope_strategy_file": "scope_strategy.json",
-  "controls_file": "controls.xlsx",
-  "validations": {
-    "vendor_monitoring": {
+  "results": [
+    {
+      "vendor": "Amazon Web Services (AWS)",
       "status": "PASS",
-      "message": "No vendor monitoring controls required (not carve-out method)",
-      "missing_controls": [],
-      "found_controls": []
+      "matched_control_ref": "CC9.2-AMAZON_WEB_SERVICES_(AWS)",
+      "reasoning": "The control explicitly mentions 'Amazon Web Services (AWS)' and describes an annual review of the SOC 2 Type II report, meeting the criteria for review and monitoring."
     },
-    "control_structure": {
+    {
+      "vendor": "Okta",
       "status": "PASS",
-      "message": "Control structure validation passed",
-      "issues": []
+      "matched_control_ref": "CC9.2-OKTA",
+      "reasoning": "The control explicitly mentions 'Okta' and describes an annual review of the SOC 2 Type II report, meeting the criteria for review and monitoring."
+    },
+    {
+      "vendor": "CrowdStrike",
+      "status": "PASS",
+      "matched_control_ref": "CC9.2-CROWDSTRIKE",
+      "reasoning": "The control explicitly mentions 'CrowdStrike' and describes an annual review of the SOC 2 Type II report, meeting the criteria for review and monitoring."
     }
-  },
-  "remediation_guidance": [],
-  "pipeline_decision": {
-    "proceed_to_sanitization": true,
-    "reason": "All validations passed"
-  }
+  ]
 }

@@ -1,10 +1,14 @@
 import os
 import argparse
+import sys
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from config import OPENAI_API_KEY, SOC2_MODEL
+
+sys.stdout.reconfigure(encoding='utf-8')
+
 
 def main():
     parser = argparse.ArgumentParser(description="Ingestia wielu plików PDF do bazy wektorowej.")

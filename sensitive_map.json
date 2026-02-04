@@ -1,11 +1,16 @@
 {
-    "PaySecure": "[INTERNAL_SYSTEM]",
+    "PaySecure": "[ORGANIZATION]",
     "AWS": "[VENDOR]",
     "GitHub": "[VENDOR]",
     "Okta": "[VENDOR]",
     "HR": "[ROLE]",
-    "department heads": "[ROLE]",
-    "Amazon RDS": "[VENDOR]",
+    "DevOps/Security Team": "[ROLE]",
+    "engineering team": "[ROLE]",
+    "Security Team": "[ROLE]",
+    "Amazon RDS (PostgreSQL)": "[INTERNAL_SYSTEM]",
+    "PaySecure systems": "[INTERNAL_SYSTEM]",
+    "PaySecure system codebase": "[INTERNAL_SYSTEM]",
+    "PaySecure application": "[INTERNAL_SYSTEM]",
     "AWS CloudWatch": "[VENDOR]",
     "CrowdStrike": "[VENDOR]"
 }

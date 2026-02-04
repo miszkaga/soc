@@ -3,9 +3,13 @@ from openai import OpenAI
 import json
 import os
 import time
+import sys
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from config import OPENAI_API_KEY
+
+sys.stdout.reconfigure(encoding='utf-8')
+
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 INPUT_FILE = "sanitized_controls.xlsx"
