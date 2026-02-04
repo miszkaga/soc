@@ -1,17 +1,22 @@
+"""
+Configuration module for sanitazer scripts.
+
+This module uses the centralized env_loader utility to load environment variables.
+"""
+
+import sys
 import os
-from dotenv import load_dotenv
 
-# 1. Load variables from .env file
-load_dotenv()
+# Add parent directory to path to access utils module
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-# 2. Get the API Key
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+from utils.env_loader import load_env, get_api_key
 
-# 3. Validation Check (Stops the script immediately if key is missing)
-if not OPENAI_API_KEY:
-    print("❌ CRITICAL ERROR: API Key missing.")
-    print("   -> Please create a '.env' file with OPENAI_API_KEY=sk-...")
-    raise ValueError("OPENAI_API_KEY not found in environment variables.")
+# Load environment variables from .env file
+load_env()
 
-# 4. Optional: Centralized Model Name (easier to upgrade later)
+# Get the OpenAI API Key (with validation)
+OPENAI_API_KEY = get_api_key("OPENAI_API_KEY")
+
+# Centralized Model Name (easier to upgrade later)
 SOC2_MODEL = "gpt-4-turbo"

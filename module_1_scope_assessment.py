@@ -10,12 +10,9 @@ import pandas as pd
 from openai import OpenAI
 from typing import Dict, List, Optional
 from config import OPENAI_API_KEY, SOC2_MODEL
-# Configuration
-API_KEY = os.getenv("OPENAI_API_KEY", "")
-if not API_KEY:
-    raise ValueError("OPENAI_API_KEY environment variable must be set")
 
-client = OpenAI(api_key=API_KEY)
+# Initialize OpenAI client with the API key from config
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # File paths
 SYSTEM_DESCRIPTION_FILE = "system_description.txt"
