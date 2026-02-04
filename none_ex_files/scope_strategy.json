@@ -1,0 +1,89 @@
+{
+  "phase": "PHASE_0_SCOPE_ASSESSMENT",
+  "timestamp": "2026-02-04T19:38:45.959733",
+  "system_description_file": "none_ex_files/system_description.txt",
+  "subservice_organizations": [
+    {
+      "vendor_name": "Microsoft Azure",
+      "service_provided": "Cloud infrastructure, physical security of Azure data centers",
+      "reliance_phrases": [
+        "Hosted on Microsoft Azure (East US 2 Region)",
+        "Compute: Azure Kubernetes Service (AKS) for microservices",
+        "Database: Azure SQL Database with geo-redundancy",
+        "Storage: Azure Blob Storage for medical imaging (DICOM), encrypted at rest",
+        "Networking: Azure Virtual Network (VNet) with strict Network Security Groups (NSGs)",
+        "Identity: Azure Active Directory (Azure AD) for staff authentication"
+      ]
+    },
+    {
+      "vendor_name": "Datadog",
+      "service_provided": "System monitoring and alerting",
+      "reliance_phrases": [
+        "Monitoring: Datadog for APM and log aggregation"
+      ]
+    },
+    {
+      "vendor_name": "Salesforce",
+      "service_provided": "CRM for managing hospital client relationships",
+      "reliance_phrases": []
+    }
+  ],
+  "reporting_method": {
+    "classification": "CARVE_OUT",
+    "confidence": 1.0,
+    "reasoning": "The system description explicitly states the use of the carve-out method for subservice organizations, indicating that the internal controls of subservice organizations such as Microsoft Azure, Datadog, and Salesforce are excluded from the examination scope. The description specifies that MedCore Health relies on these subservice organizations for certain services but does not include their internal control details in the scope of the SOC 2 Type 2 examination. Instead, it mentions that management reviews SOC 2 and HITRUST reports for Microsoft Azure and Salesforce annually, which is a typical practice in the carve-out method.",
+    "evidence": [
+      "V. SUBSERVICE ORGANIZATIONS (CARVE-OUT METHOD)",
+      "Management reviews SOC 2 and HITRUST reports for Microsoft Azure and Salesforce annually."
+    ]
+  },
+  "required_controls": [
+    {
+      "control_type": "CC9.2_VENDOR_MONITORING",
+      "vendor_name": "Microsoft Azure",
+      "required_control_description": "Annual review of Microsoft Azure SOC 2 Type II report",
+      "frequency": "Annual",
+      "tsc_criteria": "CC9.2",
+      "rationale": "Carve-out method requires monitoring of Microsoft Azure subservice organization controls"
+    },
+    {
+      "control_type": "CC9.2_VENDOR_MONITORING",
+      "vendor_name": "Datadog",
+      "required_control_description": "Annual review of Datadog SOC 2 Type II report",
+      "frequency": "Annual",
+      "tsc_criteria": "CC9.2",
+      "rationale": "Carve-out method requires monitoring of Datadog subservice organization controls"
+    },
+    {
+      "control_type": "CC9.2_VENDOR_MONITORING",
+      "vendor_name": "Salesforce",
+      "required_control_description": "Annual review of Salesforce SOC 2 Type II report",
+      "frequency": "Annual",
+      "tsc_criteria": "CC9.2",
+      "rationale": "Carve-out method requires monitoring of Salesforce subservice organization controls"
+    }
+  ],
+  "oscal_integration": {
+    "oscal_leveraged_authorizations": [
+      {
+        "vendor": "Microsoft Azure",
+        "service": "Cloud infrastructure, physical security of Azure data centers",
+        "oscal_component_type": "leveraged-authorization",
+        "recommendation": "Link to Microsoft Azure SOC 2 report UUID in OSCAL SSP"
+      },
+      {
+        "vendor": "Datadog",
+        "service": "System monitoring and alerting",
+        "oscal_component_type": "leveraged-authorization",
+        "recommendation": "Link to Datadog SOC 2 report UUID in OSCAL SSP"
+      },
+      {
+        "vendor": "Salesforce",
+        "service": "CRM for managing hospital client relationships",
+        "oscal_component_type": "leveraged-authorization",
+        "recommendation": "Link to Salesforce SOC 2 report UUID in OSCAL SSP"
+      }
+    ]
+  },
+  "required_disclosure_language": "The description includes the services of subservice organizations; however, the controls of these subservice organizations are not included in the scope of this examination. The user entity should review the SOC 2 reports of the subservice organizations to assess their control effectiveness."
+}

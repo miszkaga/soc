@@ -1,0 +1,16 @@
+{
+    "PatientFlow": "[INTERNAL_SYSTEM]",
+    "Azure": "[VENDOR]",
+    "Azure Active Directory": "[VENDOR]",
+    "HR": "[ROLE]",
+    "IT department": "[ROLE]",
+    "Engineering team": "[ROLE]",
+    "IT Operations Team": "[ROLE]",
+    "IT Security Team": "[ROLE]",
+    "Security Team": "[ROLE]",
+    "GitLab": "[VENDOR]",
+    "Azure Blob Storage": "[VENDOR]",
+    "Datadog": "[VENDOR]",
+    "Microsoft Azure": "[VENDOR]",
+    "Salesforce": "[VENDOR]"
+}
