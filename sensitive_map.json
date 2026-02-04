@@ -1,0 +1,11 @@
+{
+    "PaySecure": "[INTERNAL_SYSTEM]",
+    "AWS": "[VENDOR]",
+    "GitHub": "[VENDOR]",
+    "Okta": "[VENDOR]",
+    "HR": "[ROLE]",
+    "department heads": "[ROLE]",
+    "Amazon RDS": "[VENDOR]",
+    "AWS CloudWatch": "[VENDOR]",
+    "CrowdStrike": "[VENDOR]"
+}
