@@ -15,10 +15,17 @@ pip install python-dotenv openai pandas openpyxl langchain langchain-community l
 Create a `.env` file in the root directory with your OpenAI API key:
 
 ```bash
-OPENAI_API_KEY=your-api-key-here
+# Copy the example file
+cp .env.example .env
+
+# Edit .env and add your actual API key
+# OPENAI_API_KEY=your-api-key-here
 ```
 
-**Important:** Never commit the `.env` file to version control. It is already included in `.gitignore`.
+**Important:** 
+- Never commit the `.env` file to version control. It is already included in `.gitignore`.
+- Use `.env.example` as a template for required environment variables.
+- Keep your API keys secure and never share them publicly.
 
 ### 3. Environment Variable Loading
 
