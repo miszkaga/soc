@@ -3,7 +3,7 @@ from openai import OpenAI
 import json
 import os
 import time
-from sanitazer.config import OPENAI_API_KEY
+from config import OPENAI_API_KEY
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 INPUT_FILE = "mapped_controls_rag.xlsx"

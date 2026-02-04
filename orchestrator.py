@@ -33,8 +33,8 @@ class Colors:
 
 def print_phase_header(phase: str, description: str):
     """Print a formatted phase header."""
-    print("
-" + "=" * 80)
+    print(
+" + " "=" * 80)
     print(f"{Colors.HEADER}{Colors.BOLD}{phase}: {description}{Colors.ENDC}")
     print("=" * 80 + "\n")
 
