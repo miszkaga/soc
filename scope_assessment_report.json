@@ -1,0 +1,53 @@
+{
+  "scope_assessment": {
+    "timestamp": "2026-02-04T13:57:23.509223",
+    "system_description_file": "system_description.txt",
+    "controls_file": "sanitized_controls.xlsx"
+  },
+  "subservice_organizations": [
+    {
+      "vendor_name": "Amazon Web Services (AWS)",
+      "service_provided": "Cloud hosting, physical security of data centers, environmental controls (power, cooling)",
+      "reliance_phrases": [
+        "hosted entirely within Amazon Web Services (AWS)",
+        "The Company relies on AWS for physical security but is responsible for configuring security groups, encryption, and logical access within the cloud environment."
+      ]
+    },
+    {
+      "vendor_name": "Okta",
+      "service_provided": "Identity and Access Management (IAM) for internal staff",
+      "reliance_phrases": [
+        "Okta is used for internal employee Single Sign-On (SSO) and Multi-Factor Authentication (MFA)",
+        "The Company relies on Okta for the authentication platform but is responsible for provisioning users and enforcing MFA policies."
+      ]
+    },
+    {
+      "vendor_name": "CrowdStrike",
+      "service_provided": "Endpoint detection and response (EDR) for employee workstations",
+      "reliance_phrases": [
+        "Service Provided: Endpoint detection and response (EDR) for employee workstations."
+      ]
+    }
+  ],
+  "reporting_method": {
+    "classification": "ERROR",
+    "confidence": 0.0,
+    "reasoning": "Error code: 400 - {'error': {'message': \"'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.\", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}",
+    "evidence": []
+  },
+  "validation": {
+    "validation_status": "CONTROLS_FILE_NOT_FOUND",
+    "monitoring_controls": []
+  },
+  "oscal_integration": {
+    "oscal_leveraged_authorizations": []
+  },
+  "required_disclosure_language": "Manual review required to determine appropriate disclosure language.",
+  "recommendations": [
+    {
+      "priority": "MEDIUM",
+      "finding": "Low confidence in classification",
+      "recommendation": "Manual review of system description recommended"
+    }
+  ]
+}

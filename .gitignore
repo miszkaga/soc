@@ -19,14 +19,11 @@ ENV/
 Thumbs.db
 
 # Project specific
-*.xlsx
-*.json
 
 # Exclude vector index (generated files)
 soc2_vector_index/
 
 # Exclude data files directory
-none_ex_files/
 
 # Allow specific documentation files to be tracked
 !Illustrative*

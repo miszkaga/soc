@@ -1,0 +1,23 @@
+{
+  "overall_status": "PASS",
+  "results": [
+    {
+      "vendor": "Microsoft Azure",
+      "status": "PASS",
+      "matched_control_ref": "CC9.2-MICROSOFT_AZURE",
+      "reasoning": "The control explicitly mentions Microsoft Azure and describes an annual review of the SOC 2 Type II report to ensure adequate controls, meeting the criteria for review and monitoring."
+    },
+    {
+      "vendor": "Datadog",
+      "status": "PASS",
+      "matched_control_ref": "CC9.2-DATADOG",
+      "reasoning": "The control explicitly mentions Datadog and describes an annual review of the SOC 2 Type II report to ensure adequate controls, meeting the criteria for review and monitoring."
+    },
+    {
+      "vendor": "Salesforce",
+      "status": "PASS",
+      "matched_control_ref": "CC9.2-SALESFORCE",
+      "reasoning": "The control explicitly mentions Salesforce and describes an annual review of the SOC 2 Type II report to ensure adequate controls, meeting the criteria for review and monitoring."
+    }
+  ]
+}

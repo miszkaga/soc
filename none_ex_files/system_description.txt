@@ -1,0 +1,49 @@
+SECTION 3: DESCRIPTION OF MEDCORE HEALTH'S "PATIENTFLOW" SYSTEM
+
+I. COMPANY OVERVIEW AND SERVICES
+MedCore Health Inc. ("the Company") provides a HIPAA-compliant patient management platform known as "PatientFlow." The system enables hospitals and clinics to schedule appointments, manage electronic health records (EHR), and process insurance claims. This description covers the PatientFlow system and supporting IT controls for the period January 1, 2024, to December 31, 2024.
+
+The system is designed to meet the criteria for Security, Availability, and Confidentiality set forth in TSP Section 100, 2017 Trust Services Criteria (AICPA).
+
+II. INFRASTRUCTURE AND SOFTWARE
+The PatientFlow system operates in a Hybrid Cloud model.
+- Core Application: Hosted on Microsoft Azure (East US 2 Region).
+- Legacy Archives: Maintained in the Company's co-located physical data center in Dallas, TX.
+
+Core Components:
+- Compute: Azure Kubernetes Service (AKS) for microservices.
+- Database: Azure SQL Database with geo-redundancy.
+- Storage: Azure Blob Storage for medical imaging (DICOM), encrypted at rest.
+- Networking: Azure Virtual Network (VNet) with strict Network Security Groups (NSGs).
+
+Software Stack:
+- Code Repository: GitLab (Self-hosted).
+- Monitoring: Datadog for APM and log aggregation.
+- Support: Zendesk for customer ticketing.
+- Identity: Azure Active Directory (Azure AD) for staff authentication.
+
+III. PEOPLE AND OPERATIONS
+Key departments include:
+- Clinical Operations: Responsible for data accuracy and medical compliance.
+- IT Security: Manages firewall rules, intrusion detection, and HIPAA audits.
+- Engineering: Develops features using a secure SDLC.
+
+IV. DATA AND BACKUPS
+The system processes Protected Health Information (PHI).
+- Classification: "Restricted / PHI".
+- Backups: Transaction logs every 15 minutes; full backups weekly. Retained for 7 years per regulatory requirements.
+- Encryption: All data is encrypted in transit (TLS 1.2+) and at rest (AES-256).
+
+V. SUBSERVICE ORGANIZATIONS (CARVE-OUT METHOD)
+1. Microsoft Azure:
+   - Service: Cloud infrastructure, physical security of Azure data centers.
+   - User Responsibility: Configuring IAM, encryption keys, and network firewalls.
+
+2. Datadog:
+   - Service: System monitoring and alerting.
+
+3. Salesforce:
+   - Service: CRM for managing hospital client relationships.
+
+VI. COMPLEMENTARY USER ENTITY CONTROLS (CUECs)
+Management reviews SOC 2 and HITRUST reports for Microsoft Azure and Salesforce annually.
