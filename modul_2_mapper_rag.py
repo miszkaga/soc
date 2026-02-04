@@ -12,8 +12,8 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
-INPUT_FILE = "sanitized_controls.xlsx"
-OUTPUT_FILE = "mapped_controls_rag.xlsx"
+INPUT_FILE = "none_ex_files/sanitized_controls.xlsx"
+OUTPUT_FILE = "none_ex_files/mapped_controls_rag.xlsx"
 INDEX_PATH = "soc2_vector_index"
 
 def load_knowledge_base():

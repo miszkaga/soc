@@ -8,9 +8,9 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
-INPUT_FILE = "controls.xlsx"
-OUTPUT_FILE = "sanitized_controls.xlsx"
-MAP_FILE = "sensitive_map.json"
+INPUT_FILE = "none_ex_files/controls.xlsx"
+OUTPUT_FILE = "none_ex_files/sanitized_controls.xlsx"
+MAP_FILE = "none_ex_files/sensitive_map.json"
 
 def smart_detect_column(df):
     """Detects description column."""

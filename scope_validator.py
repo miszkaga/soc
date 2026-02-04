@@ -22,9 +22,9 @@ sys.stdout.reconfigure(encoding='utf-8')
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # File paths
-SCOPE_STRATEGY_FILE = "scope_strategy.json"
-CONTROLS_FILE = "controls.xlsx"
-OUTPUT_FILE = "scope_validation_report.json"
+SCOPE_STRATEGY_FILE = "none_ex_files/scope_strategy.json"
+CONTROLS_FILE = "none_ex_files/controls.xlsx"
+OUTPUT_FILE = "none_ex_files/scope_validation_report.json"
 
 def load_data():
     if not os.path.exists(SCOPE_STRATEGY_FILE):

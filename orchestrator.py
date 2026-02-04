@@ -81,7 +81,7 @@ def run_python_script(script_path: str, phase_name: str) -> Tuple[bool, str]:
 def load_validation_report() -> Dict:
     """Load the validation report from Phase 2."""
     try:
-        with open("scope_validation_report.json", 'r') as f:
+        with open("none_ex_files/scope_validation_report.json", 'r') as f:
             return json.load(f)
     except FileNotFoundError:
         return {}
@@ -90,7 +90,7 @@ def phase_0_scope_assessment() -> bool:
     """Phase 0: Strategic Intelligence - Scope Assessment"""
     print_phase_header("PHASE 0", "Strategic Intelligence (Scope Assessment)")
     
-    if not os.path.exists("system_description.txt"):
+    if not os.path.exists("none_ex_files/system_description.txt"):
         print_error("system_description.txt not found!")
         print("Please create this file with your organization's system description.")
         return False
@@ -102,7 +102,7 @@ def phase_0_scope_assessment() -> bool:
         
         # Load and display summary
         try:
-            with open("scope_strategy.json", 'r') as f:
+            with open("none_ex_files/scope_strategy.json", 'r') as f:
                 strategy = json.load(f)
                 classification = strategy.get("reporting_method", {}).get("classification", "UNKNOWN")
                 vendors = strategy.get("subservice_organizations", [])
@@ -123,15 +123,15 @@ def phase_1_control_generation() -> bool:
     """Phase 1: Intelligent Control Generation (Scope-Aware)"""
     print_phase_header("PHASE 1", "Intelligent Control Generation (Scope-Aware)")
     
-    success, output = run_python_script("sanitazer/rcm_generator.py", "Phase 1")
+    success, output = run_python_script("rcm_generator.py", "Phase 1")
     
     if success:
         print_success("Phase 1 Complete: Controls generated")
         
         # Check if controls file exists
-        if os.path.exists("controls.xlsx"):
+        if os.path.exists("none_ex_files/controls.xlsx"):
             import pandas as pd
-            df = pd.read_excel("controls.xlsx")
+            df = pd.read_excel("none_ex_files/controls.xlsx")
             print(f"\n📋 Generated {len(df)} controls")
             
             # Count vendor controls
@@ -175,8 +175,8 @@ def phase_2_validation() -> bool:
         
         print(f"\n{Colors.FAIL}⛔ DO NOT PROCEED until deficiencies are resolved{Colors.ENDC}")
         print("Options:")
-        print("  1. Manually add missing controls to controls.xlsx")
-        print("  2. Update system_description.txt and re-run from Phase 0")
+        print("  1. Manually add missing controls to none_ex_files/controls.xlsx")
+        print("  2. Update none_ex_files/system_description.txt and re-run from Phase 0")
         print("  3. Re-run Phase 2 after fixes: python scope_validator.py")
         
         return False
@@ -187,7 +187,7 @@ def phase_3_sanitization_pipeline() -> bool:
     
     # 3.1: Sanitizer
     print(f"\n{Colors.OKCYAN}[3.1] Running Sanitizer...{Colors.ENDC}")
-    success, _ = run_python_script("sanitazer/automated_sanitizer.py", "Sanitizer")
+    success, _ = run_python_script("automated_sanitizer.py", "Sanitizer")
     if not success:
         print_error("Sanitizer failed")
         return False
@@ -195,7 +195,7 @@ def phase_3_sanitization_pipeline() -> bool:
     
     # 3.2: Mapper (RAG)
     print(f"\n{Colors.OKCYAN}[3.2] Running Mapper (RAG)...{Colors.ENDC}")
-    success, _ = run_python_script("sanitazer/modul_2_mapper_rag.py", "Mapper")
+    success, _ = run_python_script("modul_2_mapper_rag.py", "Mapper")
     if not success:
         print_error("Mapper failed")
         return False
@@ -203,7 +203,7 @@ def phase_3_sanitization_pipeline() -> bool:
     
     # 3.3: Auditor
     print(f"\n{Colors.OKCYAN}[3.3] Running Auditor (Procedure Generator)...{Colors.ENDC}")
-    success, _ = run_python_script("sanitazer/auditor.py", "Auditor")
+    success, _ = run_python_script("auditor.py", "Auditor")
     if not success:
         print_error("Auditor failed")
         return False
@@ -230,12 +230,12 @@ def generate_pipeline_report(start_time: datetime, phases_completed: list):
     
     print("\nGenerated Files:")
     files = [
-        ("scope_strategy.json", "Scope strategy from Phase 0"),
-        ("controls.xlsx", "RAW controls from Phase 1"),
-        ("scope_validation_report.json", "Validation report from Phase 2"),
-        ("sanitized_controls.xlsx", "Sanitized controls"),
-        ("mapped_controls_rag.xlsx", "Mapped controls with TSC"),
-        ("FINAL_SOC2_AUDIT_ENGLISH.xlsx", "Final audit procedures")
+        ("none_ex_files/scope_strategy.json", "Scope strategy from Phase 0"),
+        ("none_ex_files/controls.xlsx", "RAW controls from Phase 1"),
+        ("none_ex_files/scope_validation_report.json", "Validation report from Phase 2"),
+        ("none_ex_files/sanitized_controls.xlsx", "Sanitized controls"),
+        ("none_ex_files/mapped_controls_rag.xlsx", "Mapped controls with TSC"),
+        ("none_ex_files/FINAL_SOC2_AUDIT_ENGLISH.xlsx", "Final audit procedures")
     ]
     
     for filename, description in files:
@@ -295,7 +295,7 @@ def main():
         generate_pipeline_report(start_time, phases_completed)
         
         print(f"\n{Colors.OKGREEN}✅ All phases completed. Final audit procedures ready.{Colors.ENDC}")
-        print(f"\nFinal Output: {Colors.BOLD}FINAL_SOC2_AUDIT_ENGLISH.xlsx{Colors.ENDC}")
+        print(f"\nFinal Output: {Colors.BOLD}none_ex_files/FINAL_SOC2_AUDIT_ENGLISH.xlsx{Colors.ENDC}")
         
     except KeyboardInterrupt:
         print(f"\n\n{Colors.WARNING}Pipeline interrupted by user{Colors.ENDC}")

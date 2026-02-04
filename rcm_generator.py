@@ -9,9 +9,9 @@ sys.stdout.reconfigure(encoding='utf-8')
 # Initialize client
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-SYSTEM_DESC_FILE = "system_description.txt"
-SCOPE_STRATEGY_FILE = "scope_strategy.json"
-OUTPUT_FILE = "controls.xlsx"
+SYSTEM_DESC_FILE = "none_ex_files/system_description.txt"
+SCOPE_STRATEGY_FILE = "none_ex_files/scope_strategy.json"
+OUTPUT_FILE = "none_ex_files/controls.xlsx"
 
 def load_scope_strategy():
     """Load scope strategy from Phase 0 if it exists."""
