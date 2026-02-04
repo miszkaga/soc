@@ -9,7 +9,7 @@ import json
 import pandas as pd
 from openai import OpenAI
 from typing import Dict, List, Optional
-
+from config import OPENAI_API_KEY, SOC2_MODEL
 # Configuration
 API_KEY = os.getenv("OPENAI_API_KEY", "")
 if not API_KEY:
