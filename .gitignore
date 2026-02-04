@@ -23,3 +23,7 @@ Thumbs.db
 *.json
 soc2_vector_index/
 system_description.txt
+
+# Allow files in none_ex_files directory
+!none_ex_files/
+!none_ex_files/**
