@@ -5,7 +5,7 @@ import os
 import time
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
-from config import OPENAI_API_KEY, SOC2_MODEL
+from sanitazer.config import OPENAI_API_KEY
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 INPUT_FILE = "sanitized_controls.xlsx"
