@@ -50,9 +50,10 @@ def get_api_key(key_name: str = "OPENAI_API_KEY", required: bool = True) -> Opti
     api_key = os.getenv(key_name)
     
     if not api_key and required:
-        print(f"❌ CRITICAL ERROR: {key_name} missing.")
-        print(f"   -> Please create a '.env' file with {key_name}=<your-key>")
-        raise ValueError(f"{key_name} not found in environment variables.")
+        raise ValueError(
+            f"{key_name} not found in environment variables. "
+            f"Please create a '.env' file with {key_name}=<your-key>"
+        )
     
     return api_key
 

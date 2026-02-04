@@ -4,11 +4,13 @@ Configuration module for sanitazer scripts.
 This module uses the centralized env_loader utility to load environment variables.
 """
 
-import sys
 import os
+import sys
 
-# Add parent directory to path to access utils module
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Ensure parent directory is in path for imports
+_parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
 
 from utils.env_loader import load_env, get_api_key
 
