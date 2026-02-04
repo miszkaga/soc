@@ -1,13 +1,13 @@
 {
   "phase": "PHASE_0_SCOPE_ASSESSMENT",
-  "timestamp": "2026-02-04T13:49:58.432255",
+  "timestamp": "2026-02-04T15:54:26.442349",
   "system_description_file": "system_description.txt",
   "subservice_organizations": [
     {
-      "vendor_name": "Amazon Web Services",
+      "vendor_name": "Amazon Web Services (AWS)",
       "service_provided": "Cloud hosting, physical security of data centers, environmental controls (power, cooling)",
       "reliance_phrases": [
-        "hosted entirely within Amazon Web Services",
+        "hosted entirely within Amazon Web Services (AWS)",
         "The Company relies on AWS for physical security but is responsible for configuring security groups, encryption, and logical access within the cloud environment."
       ]
     },
@@ -25,32 +25,64 @@
       "reliance_phrases": [
         "CrowdStrike: Service Provided: Endpoint detection and response (EDR) for employee workstations."
       ]
-    },
-    {
-      "vendor_name": "GitHub",
-      "service_provided": "Source code management and CI/CD",
-      "reliance_phrases": [
-        "Source code is managed in GitHub",
-        "Automated deployments are managed via GitHub Actions and Terraform"
-      ]
-    },
-    {
-      "vendor_name": "Jira",
-      "service_provided": "Ticketing system for change management and issue tracking",
-      "reliance_phrases": [
-        "Jira is used for change management and issue tracking"
-      ]
     }
   ],
   "reporting_method": {
-    "classification": "ERROR",
-    "confidence": 0.0,
-    "reasoning": "Error code: 400 - {'error': {'message': \"'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.\", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}",
-    "evidence": []
+    "classification": "CARVE_OUT",
+    "confidence": 1.0,
+    "reasoning": "The system description explicitly states that the controls associated with subservice organizations are not included in the examination scope, and the 'Carve-Out Method' is used for reporting. This is confirmed by the description in Section V, which details the services provided by AWS, Okta, and CrowdStrike, and specifies that the company relies on these subservice organizations for certain aspects of the system but is responsible for other specific controls. The description does not include any details about the internal controls of these subservice organizations, aligning with the characteristics of the carve-out method.",
+    "evidence": [
+      "The Company utilizes subservice organizations to provide specific aspects of the system. The controls associated with these subservice organizations are NOT included in this description. The Company uses the \"Carve-Out Method\" for reporting.",
+      "User Entity Responsibility: The Company relies on AWS for physical security but is responsible for configuring security groups, encryption, and logical access within the cloud environment."
+    ]
   },
-  "required_controls": [],
+  "required_controls": [
+    {
+      "control_type": "CC9.2_VENDOR_MONITORING",
+      "vendor_name": "Amazon Web Services (AWS)",
+      "required_control_description": "Annual review of Amazon Web Services (AWS) SOC 2 Type II report",
+      "frequency": "Annual",
+      "tsc_criteria": "CC9.2",
+      "rationale": "Carve-out method requires monitoring of Amazon Web Services (AWS) subservice organization controls"
+    },
+    {
+      "control_type": "CC9.2_VENDOR_MONITORING",
+      "vendor_name": "Okta",
+      "required_control_description": "Annual review of Okta SOC 2 Type II report",
+      "frequency": "Annual",
+      "tsc_criteria": "CC9.2",
+      "rationale": "Carve-out method requires monitoring of Okta subservice organization controls"
+    },
+    {
+      "control_type": "CC9.2_VENDOR_MONITORING",
+      "vendor_name": "CrowdStrike",
+      "required_control_description": "Annual review of CrowdStrike SOC 2 Type II report",
+      "frequency": "Annual",
+      "tsc_criteria": "CC9.2",
+      "rationale": "Carve-out method requires monitoring of CrowdStrike subservice organization controls"
+    }
+  ],
   "oscal_integration": {
-    "oscal_leveraged_authorizations": []
+    "oscal_leveraged_authorizations": [
+      {
+        "vendor": "Amazon Web Services (AWS)",
+        "service": "Cloud hosting, physical security of data centers, environmental controls (power, cooling)",
+        "oscal_component_type": "leveraged-authorization",
+        "recommendation": "Link to Amazon Web Services (AWS) SOC 2 report UUID in OSCAL SSP"
+      },
+      {
+        "vendor": "Okta",
+        "service": "Identity and Access Management (IAM) for internal staff",
+        "oscal_component_type": "leveraged-authorization",
+        "recommendation": "Link to Okta SOC 2 report UUID in OSCAL SSP"
+      },
+      {
+        "vendor": "CrowdStrike",
+        "service": "Endpoint detection and response (EDR) for employee workstations",
+        "oscal_component_type": "leveraged-authorization",
+        "recommendation": "Link to CrowdStrike SOC 2 report UUID in OSCAL SSP"
+      }
+    ]
   },
-  "required_disclosure_language": "Manual review required to determine appropriate disclosure language."
+  "required_disclosure_language": "The description includes the services of subservice organizations; however, the controls of these subservice organizations are not included in the scope of this examination. The user entity should review the SOC 2 reports of the subservice organizations to assess their control effectiveness."
 }

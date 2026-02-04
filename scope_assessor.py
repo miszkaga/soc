@@ -10,9 +10,12 @@ that guides control generation and validation.
 import os
 import json
 import pandas as pd
+import sys
 from openai import OpenAI
 from typing import Dict, List, Optional
 from config import OPENAI_API_KEY, SOC2_MODEL
+
+sys.stdout.reconfigure(encoding='utf-8')
 
 # Configuration
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -114,8 +117,8 @@ CLASSIFICATION RULES:
 System Description:
 {description}
 
-Provide your classification with evidence-based reasoning:
-{{
+Provide your classification in JSON format with evidence-based reasoning:
+{{ 
   "classification": "CARVE_OUT" or "INCLUSIVE" or "UNDETERMINED",
   "confidence": 0.0-1.0,
   "reasoning": "Detailed explanation with quotes from description",

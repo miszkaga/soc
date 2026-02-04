@@ -3,6 +3,8 @@ from openai import OpenAI
 import json
 import os
 from config import OPENAI_API_KEY, SOC2_MODEL
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
 
 # Initialize client
 client = OpenAI(api_key=OPENAI_API_KEY)

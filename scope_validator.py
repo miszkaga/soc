@@ -1,298 +1,141 @@
 """
-PHASE 2: SCOPE VALIDATOR (The Gatekeeper)
-Validates RAW controls against scope strategy BEFORE sanitization.
+PHASE 2: SCOPE VALIDATOR (LLM EDITION)
+Validates RAW controls against scope strategy using Semantic Analysis.
 
-This is the CRITICAL quality gate that prevents "Identity Loss" by validating
-controls while vendor names are still intact.
-
-CRITICAL: This runs AFTER control generation but BEFORE sanitization.
+Why LLM?
+- Handles synonyms ("AWS" == "Amazon Web Services").
+- Understands context (Distinguishes between "We use AWS" and "We review AWS").
+- More robust than Keyword Matching.
 """
 
+import sys
 import os
 import json
 import pandas as pd
+from openai import OpenAI
 from typing import Dict, List
-from datetime import datetime
+from config import OPENAI_API_KEY, SOC2_MODEL
+
+# Windows console encoding fix
+sys.stdout.reconfigure(encoding='utf-8')
+
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # File paths
 SCOPE_STRATEGY_FILE = "scope_strategy.json"
 CONTROLS_FILE = "controls.xlsx"
 OUTPUT_FILE = "scope_validation_report.json"
 
-def load_scope_strategy(filepath: str) -> Dict:
-    """Load the scope strategy from Phase 0."""
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"Scope strategy not found: {filepath}. Run scope_assessor.py first.")
-    
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return json.load(f)
+def load_data():
+    if not os.path.exists(SCOPE_STRATEGY_FILE):
+        raise FileNotFoundError(f"Missing {SCOPE_STRATEGY_FILE}")
+    if not os.path.exists(CONTROLS_FILE):
+        raise FileNotFoundError(f"Missing {CONTROLS_FILE}")
 
-def load_controls(filepath: str) -> pd.DataFrame:
-    """Load the RAW controls file (before sanitization)."""
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"Controls file not found: {filepath}. Run rcm_generator.py first.")
-    
-    return pd.read_excel(filepath)
+    with open(SCOPE_STRATEGY_FILE, 'r', encoding='utf-8') as f:
+        strategy = json.load(f)
 
-def validate_vendor_monitoring_controls(df: pd.DataFrame, scope_strategy: Dict) -> Dict:
+    df = pd.read_excel(CONTROLS_FILE)
+    return strategy, df
+
+def validate_with_llm(vendors: List[Dict], controls_text: str) -> Dict:
     """
-    CRITICAL VALIDATION: Check if required vendor monitoring controls exist.
-    This MUST run on RAW controls before vendor names are sanitized to [VENDOR].
+    Asks the LLM to act as the Judge.
     """
-    required_controls = scope_strategy.get("required_controls", [])
-    vendors = scope_strategy.get("subservice_organizations", [])
-    classification = scope_strategy.get("reporting_method", {}).get("classification", "")
-    
-    # If not carve-out, no vendor monitoring controls required
-    if classification != "CARVE_OUT" or not vendors:
-        return {
-            "status": "PASS",
-            "message": "No vendor monitoring controls required (not carve-out method)",
-            "missing_controls": [],
-            "found_controls": []
-        }
-    
-    # Search for controls that mention each vendor
     vendor_names = [v["vendor_name"] for v in vendors]
-    found_controls = []
-    missing_vendors = []
-    
-    # Detect control description column
-    control_desc_col = None
-    for col in df.columns:
-        if any(keyword in col.lower() for keyword in ['description', 'activity', 'control']):
-            control_desc_col = col
-            break
-    
-    if not control_desc_col:
-        return {
-            "status": "ERROR",
-            "message": "Could not detect control description column",
-            "missing_controls": [],
-            "found_controls": []
-        }
-    
-    # Check each vendor
-    for vendor in vendors:
-        vendor_name = vendor["vendor_name"]
-        monitoring_keywords = ["review", "SOC 2", "report", "monitoring", "assessment"]
-        
-        # Search for controls mentioning this vendor AND monitoring activities
-        vendor_controls = []
-        for idx, row in df.iterrows():
-            control_text = str(row.get(control_desc_col, "")).lower()
-            control_ref = row.get("Control Ref", f"Row-{idx}")
-            
-            # Check if control mentions vendor name
-            if vendor_name.lower() in control_text:
-                # Check if it's a monitoring control
-                has_monitoring = any(keyword in control_text for keyword in monitoring_keywords)
-                
-                if has_monitoring:
-                    vendor_controls.append({
-                        "control_ref": control_ref,
-                        "vendor": vendor_name,
-                        "control_text": str(row.get(control_desc_col, ""))[:200] + "..."
-                    })
-        
-        if vendor_controls:
-            found_controls.extend(vendor_controls)
-        else:
-            missing_vendors.append(vendor_name)
-    
-    # Determine validation status
-    if missing_vendors:
-        return {
-            "status": "FAIL",
-            "message": f"Missing required CC9.2 vendor monitoring controls for: {', '.join(missing_vendors)}",
-            "missing_controls": [
-                {
-                    "vendor": v,
-                    "required_control": f"Annual review of {v} SOC 2 Type II report",
-                    "tsc_criteria": "CC9.2"
-                } for v in missing_vendors
-            ],
-            "found_controls": found_controls
-        }
-    else:
-        return {
-            "status": "PASS",
-            "message": f"All required vendor monitoring controls found ({len(found_controls)} controls)",
-            "missing_controls": [],
-            "found_controls": found_controls
-        }
 
-def validate_control_completeness(df: pd.DataFrame) -> Dict:
-    """Validate that controls have required fields and proper structure."""
-    issues = []
+    prompt = f"""
+    You are a SOC 2 Quality Assurance Auditor.
     
-    # Check for required columns
-    required_cols = ["Control Ref"]
-    for col in required_cols:
-        if col not in df.columns:
-            issues.append(f"Missing required column: {col}")
+    TASK:
+    Verify if the provided 'Control Matrix' contains specific monitoring controls for the required 'Vendors'.
     
-    # Check for empty controls
-    control_desc_col = None
-    for col in df.columns:
-        if any(keyword in col.lower() for keyword in ['description', 'activity', 'control']):
-            control_desc_col = col
-            break
+    REQUIRED VENDORS (Must have a control):
+    {json.dumps(vendor_names)}
     
-    if control_desc_col:
-        empty_count = df[control_desc_col].isna().sum()
-        if empty_count > 0:
-            issues.append(f"{empty_count} controls have empty descriptions")
+    CONTROL MATRIX (Raw Text):
+    {controls_text}
     
-    if issues:
-        return {
-            "status": "WARNING",
-            "message": "Control structure issues detected",
-            "issues": issues
-        }
-    else:
-        return {
-            "status": "PASS",
-            "message": "Control structure validation passed",
-            "issues": []
-        }
+    CRITERIA:
+    1. A valid control must explicitly mention the vendor (or a common alias, e.g., 'AWS' for 'Amazon Web Services').
+    2. The control must describe a "Review", "Audit", "Monitoring", or "Assessment" of that vendor.
+    3. Be strict. If the vendor is mentioned but not reviewed, it fails.
+    
+    OUTPUT JSON FORMAT:
+    {{
+      "overall_status": "PASS" or "FAIL",
+      "results": [
+        {{
+          "vendor": "Vendor Name",
+          "status": "PASS" or "FAIL",
+          "matched_control_ref": "Ref ID or None",
+          "reasoning": "Why it passed or failed"
+        }}
+      ]
+    }}
+    """
 
-def generate_remediation_guidance(validation_result: Dict, scope_strategy: Dict) -> List[Dict]:
-    """Generate actionable remediation steps if validation fails."""
-    if validation_result["status"] != "FAIL":
-        return []
-    
-    recommendations = []
-    
-    for missing in validation_result.get("missing_controls", []):
-        vendor = missing["vendor"]
-        recommendations.append({
-            "priority": "HIGH",
-            "action": "ADD_CONTROL",
-            "vendor": vendor,
-            "suggested_control": {
-                "Control Ref": "CC9.2-VENDOR",
-                "Control Activity Description": f"On an annual basis, the Security Team reviews the SOC 2 Type II report for {vendor} to ensure the subservice organization maintains adequate controls. Any exceptions or qualifications identified in the report are documented and escalated to management for remediation tracking.",
-                "Frequency": "Annual",
-                "Owner": "Security Team",
-                "TSC Criteria": "CC9.2"
-            },
-            "rationale": f"SSAE 21 requires carve-out method to include monitoring controls for subservice organizations. {vendor} is a critical subservice organization that must be monitored."
-        })
-    
-    return recommendations
+    try:
+        response = client.chat.completions.create(
+            model=SOC2_MODEL,
+            response_format={"type": "json_object"},
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1
+        )
+        return json.loads(response.choices[0].message.content)
+    except Exception as e:
+        print(f"❌ LLM Validation Error: {e}")
+        return {"overall_status": "ERROR", "results": []}
 
 def main():
     print("=" * 80)
-    print("PHASE 2: SCOPE VALIDATOR (The Gatekeeper)")
+    print("PHASE 2: SCOPE VALIDATOR (INTELLIGENT LLM)")
     print("=" * 80)
-    print("⚠️  CRITICAL: This validates RAW controls BEFORE sanitization")
-    print("=" * 80)
-    
-    # Step 1: Load scope strategy
-    print("\n[1/4] Loading scope strategy from Phase 0...")
-    try:
-        scope_strategy = load_scope_strategy(SCOPE_STRATEGY_FILE)
-        classification = scope_strategy.get("reporting_method", {}).get("classification", "UNKNOWN")
-        vendors = scope_strategy.get("subservice_organizations", [])
-        print(f"✓ Loaded scope strategy: {classification} method with {len(vendors)} vendor(s)")
-    except FileNotFoundError as e:
-        print(f"✗ {e}")
-        return {"status": "ERROR", "message": str(e)}
-    
-    # Step 2: Load RAW controls
-    print("\n[2/4] Loading RAW controls (before sanitization)...")
-    try:
-        df = load_controls(CONTROLS_FILE)
-        print(f"✓ Loaded {len(df)} controls from {CONTROLS_FILE}")
-    except FileNotFoundError as e:
-        print(f"✗ {e}")
-        return {"status": "ERROR", "message": str(e)}
-    
-    # Step 3: Validate vendor monitoring controls
-    print("\n[3/4] Validating vendor monitoring controls...")
-    vendor_validation = validate_vendor_monitoring_controls(df, scope_strategy)
-    print(f"{'✓' if vendor_validation['status'] == 'PASS' else '✗'} {vendor_validation['message']}")
-    
-    if vendor_validation.get("found_controls"):
-        print(f"   Found {len(vendor_validation['found_controls'])} vendor monitoring control(s):")
-        for ctrl in vendor_validation["found_controls"]:
-            print(f"   - {ctrl['control_ref']}: {ctrl['vendor']}")
-    
-    if vendor_validation.get("missing_controls"):
-        print(f"   ⚠️  Missing {len(vendor_validation['missing_controls'])} required control(s):")
-        for missing in vendor_validation["missing_controls"]:
-            print(f"   - {missing['vendor']}: {missing['required_control']}")
-    
-    # Step 4: Validate control structure
-    print("\n[4/4] Validating control structure...")
-    structure_validation = validate_control_completeness(df)
-    print(f"{'✓' if structure_validation['status'] == 'PASS' else '⚠️'} {structure_validation['message']}")
-    
-    # Generate remediation guidance
-    remediation = generate_remediation_guidance(vendor_validation, scope_strategy)
-    
-    # Determine overall validation result
-    overall_status = "PASS"
-    if vendor_validation["status"] == "FAIL":
-        overall_status = "FAIL"
-    elif structure_validation["status"] == "WARNING":
-        overall_status = "WARNING"
-    
-    # Build validation report
-    validation_report = {
-        "phase": "PHASE_2_SCOPE_VALIDATION",
-        "timestamp": datetime.now().isoformat(),
-        "overall_status": overall_status,
-        "scope_strategy_file": SCOPE_STRATEGY_FILE,
-        "controls_file": CONTROLS_FILE,
-        "validations": {
-            "vendor_monitoring": vendor_validation,
-            "control_structure": structure_validation
-        },
-        "remediation_guidance": remediation,
-        "pipeline_decision": {
-            "proceed_to_sanitization": overall_status == "PASS",
-            "reason": "All validations passed" if overall_status == "PASS" else "Validation failures detected - must remediate before proceeding"
-        }
-    }
-    
-    # Save validation report
-    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-        json.dump(validation_report, f, indent=2, ensure_ascii=False)
-    
-    print(f"\n✓ Validation report saved to: {OUTPUT_FILE}")
-    
-    # Summary and decision
-    print("\n" + "=" * 80)
-    print("VALIDATION SUMMARY")
-    print("=" * 80)
-    print(f"Overall Status: {overall_status}")
-    print(f"Vendor Monitoring: {vendor_validation['status']}")
-    print(f"Control Structure: {structure_validation['status']}")
-    
-    if overall_status == "PASS":
-        print("\n✅ VALIDATION PASSED - Pipeline may proceed to sanitization")
-        print("=" * 80)
-        print("Next step: python sanitazer/automated_sanitizer.py")
-        print("=" * 80)
-        return validation_report
-    else:
-        print("\n❌ VALIDATION FAILED - Pipeline HALTED")
-        print("=" * 80)
-        print(f"Issues found: {len(remediation)}")
-        print("\nRemediation required:")
-        for idx, rec in enumerate(remediation, 1):
-            print(f"\n{idx}. Add CC9.2 control for {rec['vendor']}")
-            print(f"   Suggested: {rec['suggested_control']['Control Activity Description'][:100]}...")
-        print("\n=" * 80)
-        print("⚠️  DO NOT PROCEED TO SANITIZATION UNTIL DEFICIENCIES ARE RESOLVED")
-        print("=" * 80)
-        
-        # Exit with error code if validation failed
-        import sys
-        sys.exit(1)
 
+    # 1. Load Data
+    try:
+        strategy, df = load_data()
+        print(f"✓ Loaded Strategy & {len(df)} Controls")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return
+
+    # 2. Check Prerequisites
+    classification = strategy.get("reporting_method", {}).get("classification", "")
+    vendors = strategy.get("subservice_organizations", [])
+
+    if classification != "CARVE_OUT" or not vendors:
+        print("✓ Validation Skipped: Not a Carve-Out strategy.")
+        return
+
+    # 3. Prepare Data for LLM (Convert Excel to a readable string)
+    # We strip it down to just Ref and Description to save tokens
+    target_col = next((col for col in df.columns if 'description' in col.lower()), df.columns[1])
+    simplified_controls = df[['Control Ref', target_col]].to_string(index=False)
+
+    print(f"\n[AI Auditor is reviewing {len(vendors)} vendors against controls...]")
+
+    # 4. Run LLM Validation
+    validation_result = validate_with_llm(vendors, simplified_controls)
+
+    # 5. Process Results
+    status = validation_result.get("overall_status", "FAIL")
+    print(f"\nVALIDATION STATUS: {status}")
+
+    for res in validation_result.get("results", []):
+        icon = "✅" if res['status'] == "PASS" else "❌"
+        print(f"   {icon} {res['vendor']}: {res['reasoning']}")
+
+    # 6. Save Report
+    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+        json.dump(validation_result, f, indent=2)
+
+    # 7. Pipeline Gate
+    if status != "PASS":
+        print("\n⛔ PIPELINE HALTED: Missing critical vendor controls.")
+        sys.exit(1)
+    else:
+        print("\n✅ QUALITY GATE PASSED. Proceeding...")
 
 if __name__ == "__main__":
-    result = main()
+    main()
