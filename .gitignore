@@ -21,7 +21,15 @@ Thumbs.db
 # Project specific
 *.xlsx
 *.json
-soc2_vector_index/
 *.pdf
-system_description.txt
-none_ex_files/
+soc2_vector_index/
+
+# Allow files in none_ex_files directory
+!none_ex_files/
+!none_ex_files/**
+
+# Allow specific documentation files to be tracked
+!Illustrative*
+!*service-auditor-SOC2-report-SSAE21*
+!*2017-trust-services-criteria-with-revised-points-of-focus-2022*
+!system_description*
