@@ -66,12 +66,22 @@ If you discover a security vulnerability, please report it by:
 Before committing, you can check for hardcoded secrets:
 
 ```bash
-# Check for potential API keys
+# Check for potential API keys (basic check - may have false positives)
 grep -r "sk-[A-Za-z0-9_-]\{20,\}" --include="*.py" .
 
+# More comprehensive checks for various secret patterns
+grep -rE "(api[_-]?key|secret|password|token)\s*=\s*['\"][^'\"]{8,}" --include="*.py" .
+
 # Verify .env is not tracked
-git ls-files | grep ".env"
+git ls-files | grep ".env$"
 ```
+
+**Note:** These are basic pattern checks and may produce false positives or miss some patterns. 
+For production environments, consider using dedicated secret scanning tools like:
+- git-secrets
+- truffleHog
+- GitHub's secret scanning
+- gitleaks
 
 ## Best Practices
 

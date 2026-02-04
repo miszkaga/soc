@@ -8,9 +8,9 @@ import os
 import sys
 
 # Ensure parent directory is in path for imports
-_parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if _parent_dir not in sys.path:
-    sys.path.insert(0, _parent_dir)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from utils.env_loader import load_env, get_api_key
 
