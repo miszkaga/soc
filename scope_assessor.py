@@ -21,8 +21,8 @@ sys.stdout.reconfigure(encoding='utf-8')
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # File paths
-SYSTEM_DESCRIPTION_FILE = "system_description.txt"
-OUTPUT_FILE = "scope_strategy.json"
+SYSTEM_DESCRIPTION_FILE = "none_ex_files/system_description.txt"
+OUTPUT_FILE = "none_ex_files/scope_strategy.json"
 
 # Expert SOC 2 Auditor Persona
 AUDITOR_PERSONA = """
@@ -216,7 +216,7 @@ def main():
         print(f"✓ Loaded {len(description)} characters")
     except FileNotFoundError as e:
         print(f"✗ {e}")
-        print("\nCreate a 'system_description.txt' file with the organization's system description.")
+        print("\nCreate a 'none_ex_files/system_description.txt' file with the organization's system description.")
         return
     
     # Step 2: Identify subservice organizations

@@ -10,8 +10,8 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
-INPUT_FILE = "mapped_controls_rag.xlsx"
-OUTPUT_FILE = "FINAL_SOC2_AUDIT_ENGLISH.xlsx"
+INPUT_FILE = "none_ex_files/mapped_controls_rag.xlsx"
+OUTPUT_FILE = "none_ex_files/FINAL_SOC2_AUDIT_ENGLISH.xlsx"
 
 def generate_audit_procedure(control_row):
     text = control_row.get("Sanitized Control", "")
