@@ -18,9 +18,9 @@ if not API_KEY:
 client = OpenAI(api_key=API_KEY)
 
 # File paths
-SYSTEM_DESCRIPTION_FILE = "system_description.txt"
-CONTROLS_FILE = "sanitized_controls.xlsx"  # or controls.xlsx
-OUTPUT_FILE = "scope_assessment_report.json"
+SYSTEM_DESCRIPTION_FILE = "none_ex_files/system_description.txt"
+CONTROLS_FILE = "none_ex_files/sanitized_controls.xlsx"  # or controls.xlsx
+OUTPUT_FILE = "none_ex_files/scope_assessment_report.json"
 
 # Expert SOC 2 Auditor Persona
 AUDITOR_PERSONA = """
@@ -260,7 +260,7 @@ def main():
         print(f"✓ Loaded {len(description)} characters")
     except FileNotFoundError as e:
         print(f"✗ {e}")
-        print("\nCreate a 'system_description.txt' file with the organization's system description.")
+        print("\nCreate a 'none_ex_files/system_description.txt' file with the organization's system description.")
         return
     
     # Step 2: Identify subservice organizations
