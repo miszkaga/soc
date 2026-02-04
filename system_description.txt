@@ -1,0 +1,50 @@
+SECTION 3: DESCRIPTION OF FINTECH SOLUTIONS' "PAYSECURE" SYSTEM
+
+I. COMPANY OVERVIEW AND SERVICES
+FinTech Solutions Inc. ("the Company") provides a cloud-based payment processing platform known as "PaySecure." The system enables B2B clients to automate invoicing, reconcile payments, and manage cash flow via a web dashboard and API. This description covers the PaySecure system and the supporting general IT controls for the period January 1, 2024, to December 31, 2024.
+
+The system is designed to meet the criteria for Security and Availability set forth in TSP Section 100, 2017 Trust Services Criteria (AICPA).
+
+II. INFRASTRUCTURE AND SOFTWARE
+The PaySecure system is a multi-tenant SaaS application hosted entirely within Amazon Web Services (AWS). The Company does not maintain any physical data centers or servers.
+
+Core Infrastructure Components:
+- Compute: Application logic runs on AWS Elastic Kubernetes Service (EKS) in the us-east-1 (N. Virginia) region.
+- Database: Customer data is stored in Amazon RDS (PostgreSQL), configured with Multi-AZ replication for high availability.
+- Storage: Amazon S3 is used for document storage (invoices, logs), with server-side encryption (AES-256) enabled.
+- Networking: The production environment is isolated within a Virtual Private Cloud (VPC). Public access is restricted via AWS WAF and Application Load Balancers.
+
+Software Stack:
+- Code Repository: Source code is managed in GitHub.
+- CI/CD: Automated deployments are managed via GitHub Actions and Terraform.
+- Ticketing: Jira is used for change management and issue tracking.
+- Identity: Okta is used for internal employee Single Sign-On (SSO) and Multi-Factor Authentication (MFA).
+
+III. PEOPLE AND OPERATIONS
+The Company’s organizational structure includes the following key departments responsible for the control environment:
+- Engineering: Responsible for feature development, code review, and remediation of software bugs.
+- DevOps/Security: Responsible for cloud infrastructure configuration, access management, and vulnerability scanning.
+- HR: Responsible for background checks, onboarding, and offboarding of personnel.
+
+IV. DATA AND BACKUPS
+The system processes confidential customer data, including transaction history and basic PII (names, emails). The Company has classified this data as "Confidential."
+- Backups: Full database backups are performed daily at 02:00 UTC and retained for 30 days.
+- Replication: Backups are cross-region replicated to us-west-2 (Oregon) to support the Company's Disaster Recovery (DR) plan.
+- Availability Commitment: The Company commits to a 99.9% uptime SLA for the PaySecure API, excluding scheduled maintenance windows.
+
+V. SUBSERVICE ORGANIZATIONS (CARVE-OUT METHOD)
+The Company utilizes subservice organizations to provide specific aspects of the system. The controls associated with these subservice organizations are NOT included in this description. The Company uses the "Carve-Out Method" for reporting.
+
+1. Amazon Web Services (AWS):
+   - Service Provided: Cloud hosting, physical security of data centers, environmental controls (power, cooling).
+   - User Entity Responsibility: The Company relies on AWS for physical security but is responsible for configuring security groups, encryption, and logical access within the cloud environment.
+
+2. Okta:
+   - Service Provided: Identity and Access Management (IAM) for internal staff.
+   - User Entity Responsibility: The Company relies on Okta for the authentication platform but is responsible for provisioning users and enforcing MFA policies.
+
+3. CrowdStrike:
+   - Service Provided: Endpoint detection and response (EDR) for employee workstations.
+
+VI. COMPLEMENTARY USER ENTITY CONTROLS (CUECs)
+The Company's controls were designed with the assumption that subservice organizations implement certain controls. Management reviews the SOC 2 Type 2 reports of these subservice organizations annually to ensure their controls are operating effectively.
