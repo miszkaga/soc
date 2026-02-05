@@ -1,37 +1,39 @@
 {
   "phase": "PHASE_0_SCOPE_ASSESSMENT",
-  "timestamp": "2026-02-04T19:38:45.959733",
+  "timestamp": "2026-02-05T21:53:03.770747",
   "system_description_file": "none_ex_files/system_description.txt",
   "subservice_organizations": [
     {
       "vendor_name": "Microsoft Azure",
       "service_provided": "Cloud infrastructure, physical security of Azure data centers",
       "reliance_phrases": [
-        "Hosted on Microsoft Azure (East US 2 Region)",
-        "Compute: Azure Kubernetes Service (AKS) for microservices",
-        "Database: Azure SQL Database with geo-redundancy",
-        "Storage: Azure Blob Storage for medical imaging (DICOM), encrypted at rest",
-        "Networking: Azure Virtual Network (VNet) with strict Network Security Groups (NSGs)",
-        "Identity: Azure Active Directory (Azure AD) for staff authentication"
+        "Core Application: Hosted on Microsoft Azure (East US 2 Region).",
+        "Compute: Azure Kubernetes Service (AKS) for microservices.",
+        "Database: Azure SQL Database with geo-redundancy.",
+        "Storage: Azure Blob Storage for medical imaging (DICOM), encrypted at rest.",
+        "Networking: Azure Virtual Network (VNet) with strict Network Security Groups (NSGs).",
+        "Identity: Azure Active Directory (Azure AD) for staff authentication."
       ]
     },
     {
       "vendor_name": "Datadog",
       "service_provided": "System monitoring and alerting",
       "reliance_phrases": [
-        "Monitoring: Datadog for APM and log aggregation"
+        "Monitoring: Datadog for APM and log aggregation."
       ]
     },
     {
       "vendor_name": "Salesforce",
       "service_provided": "CRM for managing hospital client relationships",
-      "reliance_phrases": []
+      "reliance_phrases": [
+        "Service: CRM for managing hospital client relationships."
+      ]
     }
   ],
   "reporting_method": {
     "classification": "CARVE_OUT",
     "confidence": 1.0,
-    "reasoning": "The system description explicitly states the use of the carve-out method for subservice organizations, indicating that the internal controls of subservice organizations such as Microsoft Azure, Datadog, and Salesforce are excluded from the examination scope. The description specifies that MedCore Health relies on these subservice organizations for certain services but does not include their internal control details in the scope of the SOC 2 Type 2 examination. Instead, it mentions that management reviews SOC 2 and HITRUST reports for Microsoft Azure and Salesforce annually, which is a typical practice in the carve-out method.",
+    "reasoning": "The system description explicitly states the use of the 'CARVE-OUT METHOD' for subservice organizations, indicating that the controls of subservice organizations such as Microsoft Azure, Datadog, and Salesforce are excluded from the examination scope. The description does not include details about the internal controls of these vendors but rather focuses on the services they provide and the responsibilities of MedCore Health in managing certain aspects of these services.",
     "evidence": [
       "V. SUBSERVICE ORGANIZATIONS (CARVE-OUT METHOD)",
       "Management reviews SOC 2 and HITRUST reports for Microsoft Azure and Salesforce annually."
