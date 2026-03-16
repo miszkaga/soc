@@ -17,7 +17,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Lista plików PDF do przetworzenia
+    # List PDF files to process
     pdf_files = [f for f in os.listdir(args.docs_dir) if f.lower().endswith('.pdf')]
 
     if not pdf_files:
@@ -29,14 +29,14 @@ def main():
 
     all_documents = []
 
-    # 1. Wczytywanie wszystkich PDF-ów
+    # 1. Load all PDFs
     for pdf_file in pdf_files:
         path = os.path.join(args.docs_dir, pdf_file)
         print(f" -> Loading: {pdf_file}...")
         try:
             loader = PyPDFLoader(path)
             docs = loader.load()
-            # Dodajemy metadane źródłowe (żeby wiedzieć z którego pliku pochodzi wiedza)
+            # Tag each chunk with its source file for traceability
             for doc in docs:
                 doc.metadata['source_file'] = pdf_file
             all_documents.extend(docs)
@@ -45,7 +45,7 @@ def main():
 
     print(f"✅ Loaded {len(all_documents)} pages of documentation.")
 
-    # 2. Chunking (Dzielenie na fragmenty)
+    # 2. Split documents into chunks
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
@@ -54,13 +54,13 @@ def main():
     chunks = text_splitter.split_documents(all_documents)
     print(f"✅ Created {len(chunks)} knowledge chunks.")
 
-    # 3. Wektoryzacja
+    # 3. Generate vector embeddings
     print("-> Generating vectors (OpenAI Embeddings)...")
     try:
         embeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
         vector_store = FAISS.from_documents(chunks, embeddings)
 
-        # 4. Zapis
+        # 4. Save vector index to disk
         vector_store.save_local(args.output_dir)
         print(f"✅ SUCCESS! Complete knowledge base saved in '{args.output_dir}'.")
         print("   Knowledge base contains data from files:", ", ".join(pdf_files))

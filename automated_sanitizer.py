@@ -3,7 +3,7 @@ import pandas as pd
 from openai import OpenAI
 import json
 import os
-from config import OPENAI_API_KEY
+from config import OPENAI_API_KEY, SOC2_MODEL
 sys.stdout.reconfigure(encoding='utf-8')
 
 
@@ -52,7 +52,7 @@ def generate_map_with_ai(text_sample):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4-turbo",
+            model=SOC2_MODEL,
             response_format={ "type": "json_object" },
             messages=[{"role": "system", "content": system_prompt},
                       {"role": "user", "content": text_sample}],
@@ -82,7 +82,7 @@ def main():
 
     with open(MAP_FILE, 'w') as f: json.dump(sensitive_map, f, indent=4)
 
-    # Zapiszemy pod ujednoliconą nazwą kolumny dla wygody kolejnych modułów
+    # Save under a unified column name for use by downstream modules
     df['Sanitized Control Description'] = df[target_col].apply(lambda x: apply_sanitization(x, sensitive_map))
     df.to_excel(OUTPUT_FILE, index=False)
     print(f"✅ Sanitized file saved to: {OUTPUT_FILE}")

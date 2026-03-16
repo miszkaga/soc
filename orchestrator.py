@@ -111,8 +111,8 @@ def phase_0_scope_assessment() -> bool:
                 print(f"   Vendors: {len(vendors)}")
                 for v in vendors:
                     print(f"      - {v['vendor_name']}")
-        except:
-            pass
+        except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+            print_warning(f"Could not read scope strategy summary: {e}")
         
         return True
     else:

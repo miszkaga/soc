@@ -20,6 +20,9 @@ Thumbs.db
 
 # Project specific
 
+# Environment variables (contains secrets - never commit)
+.env
+
 # Exclude vector index (generated files)
 soc2_vector_index/
 

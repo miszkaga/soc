@@ -74,7 +74,7 @@ Return your analysis as valid JSON with this structure:
     
     try:
         response = client.chat.completions.create(
-            model="gpt-4-turbo",
+            model=SOC2_MODEL,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}],
             temperature=0.15  # Low temperature for determinism
@@ -124,7 +124,7 @@ Provide your classification with evidence-based reasoning:
     
     try:
         response = client.chat.completions.create(
-            model="gpt-4-turbo",
+            model=SOC2_MODEL,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}],
             temperature=0.15
