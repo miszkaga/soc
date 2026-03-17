@@ -4,12 +4,15 @@ MASTER ORCHESTRATOR: SOC 2 Audit Automation Pipeline
 Executes the complete pipeline with quality gates and validation checkpoints.
 
 EXECUTION ORDER (Privacy-First Architecture):
-  Phase 0: System Description Sanitizer  → Anonymises the system description
-                                           BEFORE any LLM call (no API involved)
-  Phase 1: Scope Assessor     → Analyses SANITIZED description, identifies vendors
-  Phase 2: Control Generator  → Generates scope-aware controls (RAW, sanitized input)
-  Phase 3: Scope Validator    → ⚠️ QUALITY GATE: Validates RAW controls
-  Phase 4: Sanitization       → Mapper → Auditor (only if Phase 3 passes)
+  Phase 0:   System Description Sanitizer  → Anonymises the system description
+                                             BEFORE any LLM call (no API involved)
+  Phase 0.5: Semantic Token Enrichment     → Local Ollama enriches tokens with
+                                             short context labels (graceful fallback)
+  Phase 1:   Scope Assessor     → Analyses enriched-sanitized description
+  Phase 2:   Control Generator  → Generates scope-aware controls (RAW, sanitized)
+  Phase 3:   Scope Validator    → ⚠️ QUALITY GATE: Validates RAW controls
+  Phase 4:   Sanitization       → Mapper → Auditor (only if Phase 3 passes)
+  Phase 5:   Report Re-hydrator → Restores original names in final Excel output
 
 CRITICAL: Sensitive data never reaches the LLM API – it is replaced with
           anonymous tokens by Phase 0 before Phase 1 begins.
@@ -113,6 +116,41 @@ def phase_0_sanitize_system_description() -> bool:
     else:
         print_error("Phase 0 Failed: Sanitizer encountered an error")
         return False
+
+
+def phase_0_5_enrich_tokens() -> bool:
+    """Phase 0.5: Semantic Token Enrichment via local Ollama (graceful fallback)."""
+    print_phase_header(
+        "PHASE 0.5",
+        "Semantic Token Enrichment (Local Ollama – No External API, Graceful Fallback)",
+    )
+
+    if not os.path.exists("none_ex_files/system_description_sensitive_map.json"):
+        print_warning("Sensitive map not found – skipping token enrichment.")
+        return True  # Non-fatal: rest of pipeline can proceed without enrichment
+
+    success, _ = run_python_script("phase_0_5_map_enricher.py", "Phase 0.5")
+
+    if success:
+        print_success("Phase 0.5 Complete: Token enrichment finished")
+        if os.path.exists("none_ex_files/enriched_sensitive_map.json"):
+            try:
+                with open("none_ex_files/enriched_sensitive_map.json") as f:
+                    enriched_map = json.load(f)
+                enriched_count = sum(1 for t in enriched_map.values() if ":" in t)
+                print(
+                    f"\n🏷️  {enriched_count}/{len(enriched_map)} tokens enriched with "
+                    f"Ollama context labels"
+                )
+            except (json.JSONDecodeError, FileNotFoundError):
+                pass
+        return True
+    else:
+        # Phase 0.5 failures are non-fatal – pipeline can continue with plain tokens
+        print_warning(
+            "Phase 0.5 encountered an error. Pipeline will continue with plain tokens."
+        )
+        return True
 
 
 def phase_1_scope_assessment() -> bool:
@@ -244,6 +282,36 @@ def phase_4_audit_pipeline() -> bool:
     print_success("Phase 4 Complete: Audit pipeline finished")
     return True
 
+
+def phase_5_rehydrate_report() -> bool:
+    """Phase 5: Re-hydrate the final Excel report with original sensitive names."""
+    print_phase_header(
+        "PHASE 5",
+        "Report Re-hydrator (Restore Original Names in Final Excel Output)",
+    )
+
+    if not os.path.exists("none_ex_files/FINAL_SOC2_AUDIT_ENGLISH.xlsx"):
+        print_warning("Final audit workbook not found – skipping re-hydration.")
+        return True  # Non-fatal
+
+    success, _ = run_python_script("phase_5_rehydrator.py", "Phase 5")
+
+    if success:
+        print_success("Phase 5 Complete: Auditor-ready report generated")
+        if os.path.exists("none_ex_files/READY_FOR_AUDITOR_ENGLISH.xlsx"):
+            print(
+                f"\n📋 Final Output (with real names restored): "
+                f"none_ex_files/READY_FOR_AUDITOR_ENGLISH.xlsx"
+            )
+        return True
+    else:
+        print_warning(
+            "Phase 5 encountered an error. "
+            "The anonymised workbook is still available at "
+            "none_ex_files/FINAL_SOC2_AUDIT_ENGLISH.xlsx"
+        )
+        return True  # Non-fatal – pipeline succeeded, re-hydration is a post-processing step
+
 def generate_pipeline_report(start_time: datetime, phases_completed: list):
     """Generate final pipeline execution report."""
     end_time = datetime.now()
@@ -264,11 +332,13 @@ def generate_pipeline_report(start_time: datetime, phases_completed: list):
     files = [
         ("none_ex_files/system_description_sensitive_map.json", "Sensitive entity map (Phase 0)"),
         ("none_ex_files/sanitized_system_description.txt", "Sanitized system description (Phase 0)"),
+        ("none_ex_files/enriched_sensitive_map.json", "Enriched token map (Phase 0.5)"),
         ("none_ex_files/scope_strategy.json", "Scope strategy (Phase 1)"),
         ("none_ex_files/controls.xlsx", "RAW controls (Phase 2)"),
         ("none_ex_files/scope_validation_report.json", "Validation report (Phase 3)"),
         ("none_ex_files/mapped_controls_rag.xlsx", "Mapped controls with TSC (Phase 4)"),
-        ("none_ex_files/FINAL_SOC2_AUDIT_ENGLISH.xlsx", "Final audit procedures (Phase 4)")
+        ("none_ex_files/FINAL_SOC2_AUDIT_ENGLISH.xlsx", "Final audit procedures (Phase 4)"),
+        ("none_ex_files/READY_FOR_AUDITOR_ENGLISH.xlsx", "Auditor-ready report with real names (Phase 5)"),
     ]
 
     for filename, description in files:
@@ -298,7 +368,11 @@ def main():
             sys.exit(1)
         phases_completed.append("Phase 0: System Description Sanitizer")
 
-        # Phase 1: Scope Assessment (reads sanitized description)
+        # Phase 0.5: Enrich tokens via local Ollama (graceful fallback if unavailable)
+        phase_0_5_enrich_tokens()
+        phases_completed.append("Phase 0.5: Semantic Token Enrichment (Ollama)")
+
+        # Phase 1: Scope Assessment (reads sanitized/enriched description)
         if not phase_1_scope_assessment():
             print_error("Pipeline halted at Phase 1")
             sys.exit(1)
@@ -325,7 +399,11 @@ def main():
             print_error("Pipeline halted at Phase 4")
             sys.exit(1)
         phases_completed.append("Phase 4: Audit Pipeline (Mapper + Auditor)")
-        
+
+        # Phase 5: Re-hydrate final report with original names (non-fatal)
+        phase_5_rehydrate_report()
+        phases_completed.append("Phase 5: Report Re-hydrator")
+
         # Success!
         print("\n" + "=" * 80)
         print(f"{Colors.OKGREEN}{Colors.BOLD}🎉 PIPELINE COMPLETED SUCCESSFULLY!{Colors.ENDC}")
@@ -334,7 +412,8 @@ def main():
         generate_pipeline_report(start_time, phases_completed)
         
         print(f"\n{Colors.OKGREEN}✅ All phases completed. Final audit procedures ready.{Colors.ENDC}")
-        print(f"\nFinal Output: {Colors.BOLD}none_ex_files/FINAL_SOC2_AUDIT_ENGLISH.xlsx{Colors.ENDC}")
+        print(f"\nFinal Output (anonymised): {Colors.BOLD}none_ex_files/FINAL_SOC2_AUDIT_ENGLISH.xlsx{Colors.ENDC}")
+        print(f"Final Output (real names): {Colors.BOLD}none_ex_files/READY_FOR_AUDITOR_ENGLISH.xlsx{Colors.ENDC}")
         
     except KeyboardInterrupt:
         print(f"\n\n{Colors.WARNING}Pipeline interrupted by user{Colors.ENDC}")
