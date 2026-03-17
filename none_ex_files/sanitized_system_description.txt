@@ -11,16 +11,16 @@ The PatientFlow system operates in a Hybrid Cloud model.
 - Legacy Archives: Maintained in the Company's co-located physical data center in [LOCATION_1], TX.
 
 Core Components:
-- Compute: Azure Kubernetes Service (AKS) for microservices.
-- Database: Azure SQL Database with geo-redundancy.
-- Storage: Azure Blob Storage for medical imaging (DICOM), encrypted at rest.
-- Networking: Azure Virtual Network (VNet) with strict [ORGANIZATION_3] (NSGs).
+- Compute: [ORGANIZATION_7] (AKS) for microservices.
+- Database: [ORGANIZATION_8] with geo-redundancy.
+- Storage: [ORGANIZATION_9] for medical imaging (DICOM), encrypted at rest.
+- Networking: [ORGANIZATION_10] (VNet) with strict Network Security Groups (NSGs).
 
 Software Stack:
-- Code Repository: GitLab (Self-hosted).
-- Monitoring: [ORGANIZATION_5] for APM and log aggregation.
-- Support: [PERSON_1] for customer ticketing.
-- Identity: Azure Active Directory (Azure AD) for staff authentication.
+- Code Repository: [ORGANIZATION_11] (Self-hosted).
+- Monitoring: [ORGANIZATION_6] for APM and log aggregation.
+- Support: [ORGANIZATION_3] for customer ticketing.
+- Identity: [ORGANIZATION_12] (Azure AD) for staff authentication.
 
 III. PEOPLE AND OPERATIONS
 Key departments include:
@@ -39,11 +39,11 @@ V. SUBSERVICE ORGANIZATIONS (CARVE-OUT METHOD)
    - Service: Cloud infrastructure, physical security of Azure data centers.
    - User Responsibility: Configuring IAM, encryption keys, and network firewalls.
 
-2. [ORGANIZATION_5]:
+2. [ORGANIZATION_6]:
    - Service: System monitoring and alerting.
 
-3. [PERSON_2]:
+3. [ORGANIZATION_5]:
    - Service: CRM for managing hospital client relationships.
 
 VI. COMPLEMENTARY USER ENTITY CONTROLS (CUECs)
-Management reviews SOC 2 and HITRUST reports for [ORGANIZATION_2] and [PERSON_2] annually.
+Management reviews SOC 2 and HITRUST reports for [ORGANIZATION_2] and [ORGANIZATION_5] annually.
