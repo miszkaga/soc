@@ -4,7 +4,7 @@ Algorithmically sanitizes the raw system description BEFORE any LLM processing.
 
 WHY THIS MATTERS:
   Real SOC 2 system descriptions contain highly sensitive data:
-  - Organisation legal names and trade names
+  - Organization legal names and trade names
   - Named vendors / subservice providers
   - Internal system / product names
   - Staff names, roles, and locations
@@ -109,6 +109,10 @@ SAFE_TERMS = {
     "legal", "compliance", "clinical operations", "it security",
     # Document structure words
     "overview", "services", "infrastructure", "software",
+    # Generic cloud networking / security concepts that spaCy may flag as ORG
+    "network security groups", "security groups", "virtual network",
+    "virtual private cloud", "subnet", "load balancer", "firewall",
+    "identity and access management", "key management service",
 }
 
 # ---------------------------------------------------------------------------
@@ -154,9 +158,18 @@ def _should_skip_entity(text: str) -> bool:
     if len(stripped) > 60:
         return True
 
-    # Safe terms list (case-insensitive)
-    if stripped.lower() in SAFE_TERMS:
+    lower = stripped.lower()
+
+    # Safe terms list (case-insensitive, exact match)
+    if lower in SAFE_TERMS:
         return True
+
+    # Compound safe terms: if the entity starts with a known safe term followed
+    # by a space (e.g. "AICPA Trust Services Criteria" starts with "aicpa"),
+    # skip it — it is a generic standard/concept phrase, not a sensitive name.
+    for safe in SAFE_TERMS:
+        if lower.startswith(safe + " "):
+            return True
 
     # Pattern-based exclusions
     for pattern in _SKIP_ENTITY_PATTERNS:
@@ -239,6 +252,12 @@ class AlgorithmicSanitizer:
                 continue
             if _should_skip_entity(ent.text):
                 continue
+            # spaCy's small model occasionally mis-labels single-word tech company /
+            # product names (e.g. "Zendesk", "Salesforce") as PERSON.  In a SOC 2
+            # system description context a single-word proper noun with no space is
+            # almost certainly a vendor / product, not a human name.
+            if category == "PERSON" and " " not in ent.text.strip():
+                category = "ORGANIZATION"
             self._get_or_create_token(ent.text, category)
 
     # ------------------------------------------------------------------
@@ -259,6 +278,65 @@ class AlgorithmicSanitizer:
         """
         for m in self._LIST_ITEM_RE.finditer(text):
             name = m.group(1).strip()
+            if not _should_skip_entity(name):
+                self._get_or_create_token(name, "ORGANIZATION")
+
+    # ------------------------------------------------------------------
+    # Phase 2b: Collect entities from dash-prefixed bullet lists
+    #   Catches vendor / product names that appear in lines such as:
+    #     "- Code Repository: GitLab (Self-hosted)."
+    #     "- Compute: Azure Kubernetes Service (AKS) for microservices."
+    #     "- Identity: Azure Active Directory (Azure AD) ..."
+    #   Pattern: optional whitespace + dash + label + colon + Value
+    #   Value: starts uppercase, stops before "(", stop words, or punctuation.
+    #
+    #   Stop-word list includes common prepositions ("on", "by", "as") so that
+    #   phrases like "Hosted on Microsoft Azure" are NOT captured wholesale.
+    # ------------------------------------------------------------------
+    _BULLET_VALUE_RE = re.compile(
+        r'^[ \t]*-\s+[\w][\w ]*:\s+'            # "  - Label: "
+        r'([A-Z][A-Za-z0-9][A-Za-z0-9 \-]*?)'  # Captured proper name (lazy)
+        r'(?=\s*[(]'                             # Stops before "("
+        r'|\s+(?:for|with|to|is|are|using|via|and|at|of|in|on|by|as|per|the|a|an)\b'
+        r'|\s*[,.]'                              # …or punctuation
+        r'|$)',                                  # …or end of line
+        re.MULTILINE,
+    )
+
+    # First words of a bullet-list value that indicate a verb phrase or generic
+    # description rather than a proper vendor / product name.  Any match whose
+    # first word (lowercased) is in this set is discarded.
+    _BULLET_SKIP_FIRST_WORDS = {
+        # Common English verbs (action descriptions, not names)
+        "hosted", "maintained", "manages", "manage", "develops", "develop",
+        "deploys", "deploy", "operates", "operate", "utilizes", "utilise",
+        "uses", "use", "provides", "provide", "includes", "include",
+        "ensures", "ensure", "allows", "allow", "handles", "handle",
+        "configuring", "configure", "reviewing", "review", "supporting",
+        "responsible", "required",
+        # Common English determiners / articles
+        "all", "the", "a", "an", "this", "that", "these", "those",
+        "our", "their", "its",
+        # Generic domain nouns that are never proper names in this context
+        "system", "service", "application", "platform", "data", "process",
+        "encryption", "backup", "access", "network", "cloud",
+    }
+
+    def _collect_bullet_entities(self, text: str) -> None:
+        """
+        Extract proper names from dash-prefixed bullet lists and register them
+        as ORGANIZATION tokens (vendor / product names in system descriptions).
+
+        Only captures values whose first word is NOT a common English word
+        (verb, article, generic noun) — this avoids false positives like
+        "Responsible for data accuracy" or "All data is encrypted".
+        """
+        for m in self._BULLET_VALUE_RE.finditer(text):
+            name = m.group(1).strip()
+            words = name.split()
+            first_word = words[0].lower() if words else ""
+            if not first_word or first_word in self._BULLET_SKIP_FIRST_WORDS:
+                continue
             if not _should_skip_entity(name):
                 self._get_or_create_token(name, "ORGANIZATION")
 
@@ -297,14 +375,17 @@ class AlgorithmicSanitizer:
         anonymised result.  self.entity_map is populated as a side-effect.
 
         Order:
-          1. Collect NER entities from the ORIGINAL text (best accuracy).
+          1.  Collect NER entities from the ORIGINAL text (best accuracy).
           1b. Collect entities from structured numbered lists (catches vendors
               that NER misses, e.g. "2. Datadog:").
-          2. Apply global string substitutions for all detected entities.
-          3. Apply regex for remaining structured artefacts.
+          1c. Collect entities from dash-prefixed bullet lists (catches vendors
+              in "- Label: Value" format, e.g. "- Monitoring: Datadog").
+          2.  Apply global string substitutions for all detected entities.
+          3.  Apply regex for remaining structured artefacts.
         """
         self._collect_ner_entities(text)
         self._collect_list_entities(text)
+        self._collect_bullet_entities(text)
         text = self._apply_entity_map(text)
         text = self._apply_regex(text)
         return text
