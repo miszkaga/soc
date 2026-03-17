@@ -9,7 +9,8 @@ sys.stdout.reconfigure(encoding='utf-8')
 # Initialize client
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-SYSTEM_DESC_FILE = "none_ex_files/system_description.txt"
+_SANITIZED_DESC_FILE = "none_ex_files/sanitized_system_description.txt"
+_ORIGINAL_DESC_FILE = "none_ex_files/system_description.txt"
 SCOPE_STRATEGY_FILE = "none_ex_files/scope_strategy.json"
 OUTPUT_FILE = "none_ex_files/controls.xlsx"
 
@@ -108,13 +109,13 @@ def generate_controls_from_desc(description_text, scope_strategy=None):
 
 def main():
     print("=" * 80)
-    print("PHASE 1: CONTROL GENERATOR (Scope-Aware Mode)")
+    print("PHASE 2: CONTROL GENERATOR (Scope-Aware Mode)")
     print("=" * 80)
 
-    # 1. Check for scope strategy from Phase 0
-    print("\n[1/4] Checking for scope strategy from Phase 0...")
+    # 1. Check for scope strategy from Phase 1
+    print("\n[1/4] Checking for scope strategy from Phase 1...")
     scope_strategy = load_scope_strategy()
-    
+
     if scope_strategy:
         classification = scope_strategy.get("reporting_method", {}).get("classification", "UNKNOWN")
         vendors = scope_strategy.get("subservice_organizations", [])
@@ -126,16 +127,24 @@ def main():
         print("⚠️  No scope strategy found. Running in generic mode.")
         print("   Recommendation: Run scope_assessor.py first for intelligent control generation.")
 
-    # 2. Read System Description
+    # 2. Read System Description – resolve path at runtime
+    system_desc_file = (
+        _SANITIZED_DESC_FILE
+        if os.path.exists(_SANITIZED_DESC_FILE)
+        else _ORIGINAL_DESC_FILE
+    )
     print(f"\n[2/4] Reading system description...")
-    if not os.path.exists(SYSTEM_DESC_FILE):
-        print(f"❌ Error: '{SYSTEM_DESC_FILE}' not found. Create it first.")
+    if not os.path.exists(system_desc_file):
+        print(f"❌ Error: '{system_desc_file}' not found. Create it first.")
         return
 
-    with open(SYSTEM_DESC_FILE, "r", encoding='utf-8') as f:
+    with open(system_desc_file, "r", encoding='utf-8') as f:
         desc_text = f.read()
 
-    print(f"✓ Loaded {len(desc_text)} characters")
+    if os.path.exists(_SANITIZED_DESC_FILE):
+        print(f"✓ Using SANITIZED system description ({len(desc_text)} characters)")
+    else:
+        print(f"✓ Loaded {len(desc_text)} characters (⚠️  not sanitized)")
 
     # 3. Generate Controls (scope-aware)
     print(f"\n[3/4] Generating controls...")
@@ -167,7 +176,7 @@ def main():
             print(f"   - {vc.get('Control Ref')}: {vc.get('Control Activity Description', '')[:80]}...")
     
     print("\n" + "=" * 80)
-    print("✅ Phase 1 Complete. Proceed to Phase 2 (Validation)")
+    print("✅ Phase 2 Complete. Proceed to Phase 3 (Validation)")
     print("=" * 80)
     print("Next step: python scope_validator.py")
     print("=" * 80)

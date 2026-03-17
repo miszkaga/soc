@@ -126,11 +126,33 @@ def main():
         icon = "✅" if res['status'] == "PASS" else "❌"
         print(f"   {icon} {res['vendor']}: {res['reasoning']}")
 
-    # 6. Save Report
+    # 6. Build remediation guidance for any failing vendors
+    remediation_guidance = []
+    for res in validation_result.get("results", []):
+        if res.get("status") != "PASS":
+            vendor_name = res.get("vendor", "Unknown")
+            remediation_guidance.append({
+                "vendor": vendor_name,
+                "suggested_control": {
+                    # CC9.2 is the AICPA TSC code for monitoring of subservice organizations
+                    # under the Carve-Out method (SSAE 21 / SOC 2 Trust Services Criteria).
+                    "Control Ref": f"CC9.2-{vendor_name.upper().replace(' ', '_')}",
+                    "Control Activity Description": (
+                        f"On an annual basis, the Security Team reviews the SOC 2 Type II report "
+                        f"for {vendor_name} to ensure the subservice organization maintains adequate "
+                        f"controls. Any exceptions identified are documented and escalated to management."
+                    ),
+                    "Frequency": "Annual",
+                    "Owner": "Security Team"
+                }
+            })
+    validation_result["remediation_guidance"] = remediation_guidance
+
+    # 7. Save Report
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         json.dump(validation_result, f, indent=2)
 
-    # 7. Pipeline Gate
+    # 8. Pipeline Gate
     if status != "PASS":
         print("\n⛔ PIPELINE HALTED: Missing critical vendor controls.")
         sys.exit(1)

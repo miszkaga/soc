@@ -4,7 +4,7 @@ from openai import OpenAI
 import json
 import os
 import time
-from config import OPENAI_API_KEY
+from config import OPENAI_API_KEY, SOC2_MODEL
 
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -44,14 +44,16 @@ def generate_audit_procedure(control_row):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4-turbo",
+            model=SOC2_MODEL,
             response_format={"type": "json_object"},
             messages=[{"role": "system", "content": system_prompt},
                       {"role": "user", "content": f"CONTROL: {text}\nTSC: {tsc}\nPOINT OF FOCUS: {pof}"}],
             temperature=0.2
         )
         return json.loads(response.choices[0].message.content)
-    except: return {}
+    except (json.JSONDecodeError, Exception) as e:
+        print(f"Audit procedure generation error: {e}")
+        return {}
 
 def main():
     if not os.path.exists(INPUT_FILE): return

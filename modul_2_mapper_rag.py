@@ -6,7 +6,7 @@ import time
 import sys
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
-from config import OPENAI_API_KEY
+from config import OPENAI_API_KEY, SOC2_MODEL
 
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -45,14 +45,16 @@ def map_control_with_rag(control_text, context_from_pdf):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4-turbo",
+            model=SOC2_MODEL,
             response_format={"type": "json_object"},
             messages=[{"role": "system", "content": system_prompt},
                       {"role": "user", "content": f"CONTROL: {control_text}\nCONTEXT: {context_from_pdf}"}],
             temperature=0.1
         )
         return json.loads(response.choices[0].message.content)
-    except: return {}
+    except (json.JSONDecodeError, Exception) as e:
+        print(f"Control mapping error: {e}")
+        return {}
 
 def main():
     if not os.path.exists(INPUT_FILE): return
@@ -61,7 +63,7 @@ def main():
     df = pd.read_excel(INPUT_FILE)
 
     mapped_data = []
-    # Teraz szukamy konkretnej kolumny, którą stworzył sanitizer
+    # Look for the specific column created by the sanitizer module
     target_col = "Sanitized Control Description"
 
     if target_col not in df.columns:
