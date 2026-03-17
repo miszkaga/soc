@@ -33,3 +33,8 @@ soc2_vector_index/
 !*service-auditor-SOC2-report-SSAE21*
 !*2017-trust-services-criteria-with-revised-points-of-focus-2022*
 !system_description*
+
+# Sensitive entity maps produced by Phase 0 – may contain original PII/confidential names
+none_ex_files/system_description_sensitive_map.json
+none_ex_files/sensitive_map.json
+
