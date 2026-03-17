@@ -73,9 +73,11 @@ def _query_ollama(entity_name: str) -> str:
     Ask the local Ollama model for a ≤5-word technical description of entity_name.
     Returns the trimmed response string, or "" on any failure.
     """
+    # Strip characters that could interfere with the prompt structure
+    safe_name = entity_name.replace("'", "").replace('"', "").replace("\n", " ").strip()
     prompt = (
         f"In 5 words or less, what is the technical or business function of "
-        f"'{entity_name}' in an IT architecture? "
+        f"'{safe_name}' in an IT architecture? "
         f"Return only the short description, no conversational text."
     )
     payload = json.dumps(
@@ -100,7 +102,7 @@ def _query_ollama(entity_name: str) -> str:
         description = description.strip('"\'')
         # Truncate to a reasonable length (avoid runaway responses)
         if len(description) > 60:
-            description = description[:57].rstrip() + "…"
+            description = description[:57].rstrip() + "..."
         return description
     except Exception as e:
         print(f"      ⚠️  Ollama error for '{entity_name}': {e}")
