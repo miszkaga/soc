@@ -1,10 +1,13 @@
 """
-PHASE 0: SCOPE ASSESSOR (Strategic Intelligence)
-Analyzes system descriptions to identify subservice organizations and classify
-reporting methods (Carve-out vs Inclusive) using LLM-powered semantic reasoning.
+PHASE 1: SCOPE ASSESSOR (Strategic Intelligence)
+Analyzes the SANITIZED system description to identify subservice organizations
+and classify reporting methods (Carve-out vs Inclusive) using LLM-powered
+semantic reasoning.
 
-This is the FIRST step in the pipeline - it creates the "ground truth" scope strategy
-that guides control generation and validation.
+NOTE: This module now reads from the sanitized system description produced by
+system_description_sanitizer.py (Phase 0). Real organisation / vendor names
+have already been replaced with tokens such as [ORGANIZATION_1] before any
+data is sent to the OpenAI API.
 """
 
 import os
@@ -21,7 +24,8 @@ sys.stdout.reconfigure(encoding='utf-8')
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # File paths
-SYSTEM_DESCRIPTION_FILE = "none_ex_files/system_description.txt"
+_SANITIZED_FILE = "none_ex_files/sanitized_system_description.txt"
+_ORIGINAL_FILE = "none_ex_files/system_description.txt"
 OUTPUT_FILE = "none_ex_files/scope_strategy.json"
 
 # Expert SOC 2 Auditor Persona
@@ -206,19 +210,32 @@ def generate_required_language(classification: str) -> str:
 
 def main():
     print("=" * 80)
-    print("PHASE 0: SCOPE ASSESSOR (Strategic Intelligence)")
+    print("PHASE 1: SCOPE ASSESSOR (Strategic Intelligence)")
     print("=" * 80)
-    
+
+    # Resolve the input file at runtime so the decision reflects the current
+    # filesystem state (i.e. Phase 0 sanitizer ran just before us).
+    system_description_file = (
+        _SANITIZED_FILE if os.path.exists(_SANITIZED_FILE) else _ORIGINAL_FILE
+    )
+
+    # Inform the user which file is being read
+    if os.path.exists(_SANITIZED_FILE):
+        print(f"\n✓ Using SANITIZED system description: {_SANITIZED_FILE}")
+    else:
+        print(f"\n⚠️  Sanitized description not found – falling back to: {_ORIGINAL_FILE}")
+        print("   Run system_description_sanitizer.py first to protect sensitive data.")
+
     # Step 1: Load system description
     print("\n[1/4] Loading system description...")
     try:
-        description = load_system_description(SYSTEM_DESCRIPTION_FILE)
+        description = load_system_description(system_description_file)
         print(f"✓ Loaded {len(description)} characters")
     except FileNotFoundError as e:
         print(f"✗ {e}")
         print("\nCreate a 'none_ex_files/system_description.txt' file with the organization's system description.")
         return
-    
+
     # Step 2: Identify subservice organizations
     print("\n[2/4] Identifying subservice organizations...")
     vendor_analysis = identify_subservice_organizations(description)
@@ -226,7 +243,7 @@ def main():
     print(f"✓ Identified {len(vendors)} subservice organization(s):")
     for v in vendors:
         print(f"   - {v['vendor_name']}: {v['service_provided']}")
-    
+
     # Step 3: Classify reporting method
     print("\n[3/4] Classifying reporting method...")
     classification_result = classify_reporting_method(description, vendors)
@@ -234,17 +251,17 @@ def main():
     confidence = classification_result.get("confidence", 0.0)
     print(f"✓ Classification: {classification} (confidence: {confidence:.2%})")
     print(f"   Reasoning: {classification_result.get('reasoning', 'N/A')[:150]}...")
-    
+
     # Step 4: Generate control requirements
     print("\n[4/4] Generating control requirements...")
     control_requirements = generate_control_requirements(classification, vendors)
     print(f"✓ Generated {len(control_requirements)} required control(s)")
-    
+
     # Build scope strategy
     scope_strategy = {
-        "phase": "PHASE_0_SCOPE_ASSESSMENT",
+        "phase": "PHASE_1_SCOPE_ASSESSMENT",
         "timestamp": pd.Timestamp.now().isoformat(),
-        "system_description_file": SYSTEM_DESCRIPTION_FILE,
+        "system_description_file": system_description_file,
         "subservice_organizations": vendors,
         "reporting_method": {
             "classification": classification,
@@ -262,7 +279,7 @@ def main():
         json.dump(scope_strategy, f, indent=2, ensure_ascii=False)
     
     print(f"\n✓ Scope strategy saved to: {OUTPUT_FILE}")
-    
+
     # Summary
     print("\n" + "=" * 80)
     print("SCOPE STRATEGY SUMMARY")
@@ -271,7 +288,7 @@ def main():
     print(f"Reporting Method: {classification} ({confidence:.1%} confidence)")
     print(f"Required Controls: {len(control_requirements)}")
     print("=" * 80)
-    print("\n✅ Phase 0 Complete. Proceed to Phase 1 (Control Generation)")
+    print("\n✅ Phase 1 Complete. Proceed to Phase 2 (Control Generation)")
     print("=" * 80)
 
 
