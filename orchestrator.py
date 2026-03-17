@@ -3,13 +3,16 @@
 MASTER ORCHESTRATOR: SOC 2 Audit Automation Pipeline
 Executes the complete pipeline with quality gates and validation checkpoints.
 
-EXECUTION ORDER (Shift-Left Architecture):
-  Phase 0: Scope Assessor     → Analyzes system description, identifies vendors
-  Phase 1: Control Generator   → Generates scope-aware controls (RAW)
-  Phase 2: Scope Validator     → ⚠️ QUALITY GATE: Validates RAW controls
-  Phase 3: Sanitization        → Sanitizer → Mapper → Auditor (only if Phase 2 passes)
+EXECUTION ORDER (Privacy-First Architecture):
+  Phase 0: System Description Sanitizer  → Anonymises the system description
+                                           BEFORE any LLM call (no API involved)
+  Phase 1: Scope Assessor     → Analyses SANITIZED description, identifies vendors
+  Phase 2: Control Generator  → Generates scope-aware controls (RAW, sanitized input)
+  Phase 3: Scope Validator    → ⚠️ QUALITY GATE: Validates RAW controls
+  Phase 4: Sanitization       → Mapper → Auditor (only if Phase 3 passes)
 
-CRITICAL: Phase 2 validation runs BEFORE sanitization to prevent "Identity Loss"
+CRITICAL: Sensitive data never reaches the LLM API – it is replaced with
+          anonymous tokens by Phase 0 before Phase 1 begins.
 """
 
 import subprocess
@@ -86,20 +89,47 @@ def load_validation_report() -> Dict:
     except FileNotFoundError:
         return {}
 
-def phase_0_scope_assessment() -> bool:
-    """Phase 0: Strategic Intelligence - Scope Assessment"""
-    print_phase_header("PHASE 0", "Strategic Intelligence (Scope Assessment)")
-    
+def phase_0_sanitize_system_description() -> bool:
+    """Phase 0: Algorithmic sanitization of the raw system description (no API)."""
+    print_phase_header("PHASE 0", "System Description Sanitizer (Privacy Guard – No API Calls)")
+
     if not os.path.exists("none_ex_files/system_description.txt"):
         print_error("system_description.txt not found!")
-        print("Please create this file with your organization's system description.")
+        print("Please create none_ex_files/system_description.txt and re-run.")
         return False
-    
-    success, output = run_python_script("scope_assessor.py", "Phase 0")
-    
+
+    success, output = run_python_script("system_description_sanitizer.py", "Phase 0")
+
     if success:
-        print_success("Phase 0 Complete: Scope strategy generated")
-        
+        print_success("Phase 0 Complete: System description sanitized")
+        if os.path.exists("none_ex_files/system_description_sensitive_map.json"):
+            try:
+                with open("none_ex_files/system_description_sensitive_map.json") as f:
+                    sensitive_map = json.load(f)
+                print(f"\n🔐 Replaced {len(sensitive_map)} unique sensitive entities with anonymous tokens")
+            except (json.JSONDecodeError, FileNotFoundError):
+                pass
+        return True
+    else:
+        print_error("Phase 0 Failed: Sanitizer encountered an error")
+        return False
+
+
+def phase_1_scope_assessment() -> bool:
+    """Phase 1: Strategic Intelligence - Scope Assessment (uses sanitized description)"""
+    print_phase_header("PHASE 1", "Strategic Intelligence (Scope Assessment)")
+
+    if not os.path.exists("none_ex_files/sanitized_system_description.txt"):
+        print_warning("Sanitized description not found – scope assessor will use raw file.")
+        if not os.path.exists("none_ex_files/system_description.txt"):
+            print_error("system_description.txt not found!")
+            return False
+
+    success, output = run_python_script("scope_assessor.py", "Phase 1")
+
+    if success:
+        print_success("Phase 1 Complete: Scope strategy generated")
+
         # Load and display summary
         try:
             with open("none_ex_files/scope_strategy.json", 'r') as f:
@@ -113,56 +143,57 @@ def phase_0_scope_assessment() -> bool:
                     print(f"      - {v['vendor_name']}")
         except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
             print_warning(f"Could not read scope strategy summary: {e}")
-        
-        return True
-    else:
-        print_error("Phase 0 Failed")
-        return False
 
-def phase_1_control_generation() -> bool:
-    """Phase 1: Intelligent Control Generation (Scope-Aware)"""
-    print_phase_header("PHASE 1", "Intelligent Control Generation (Scope-Aware)")
-    
-    success, output = run_python_script("rcm_generator.py", "Phase 1")
-    
-    if success:
-        print_success("Phase 1 Complete: Controls generated")
-        
-        # Check if controls file exists
-        if os.path.exists("none_ex_files/controls.xlsx"):
-            import pandas as pd
-            df = pd.read_excel("none_ex_files/controls.xlsx")
-            print(f"\n📋 Generated {len(df)} controls")
-            
-            # Count vendor controls
-            vendor_controls = df[df['Control Ref'].str.contains('CC9.2', na=False)]
-            if not vendor_controls.empty:
-                print(f"   Including {len(vendor_controls)} vendor monitoring controls")
-        
         return True
     else:
         print_error("Phase 1 Failed")
         return False
 
-def phase_2_validation() -> bool:
-    """Phase 2: The Gatekeeper - Validation of RAW Controls"""
-    print_phase_header("PHASE 2", "The Gatekeeper (Validation of RAW Controls)")
-    print_warning("CRITICAL: Validating controls BEFORE sanitization to prevent Identity Loss")
-    
-    success, output = run_python_script("scope_validator.py", "Phase 2")
-    
+
+def phase_2_control_generation() -> bool:
+    """Phase 2: Intelligent Control Generation (Scope-Aware, uses sanitized input)"""
+    print_phase_header("PHASE 2", "Intelligent Control Generation (Scope-Aware)")
+
+    success, output = run_python_script("rcm_generator.py", "Phase 2")
+
+    if success:
+        print_success("Phase 2 Complete: Controls generated")
+
+        # Check if controls file exists
+        if os.path.exists("none_ex_files/controls.xlsx"):
+            import pandas as pd
+            df = pd.read_excel("none_ex_files/controls.xlsx")
+            print(f"\n📋 Generated {len(df)} controls")
+
+            # Count vendor controls
+            vendor_controls = df[df['Control Ref'].str.contains('CC9.2', na=False)]
+            if not vendor_controls.empty:
+                print(f"   Including {len(vendor_controls)} vendor monitoring controls")
+
+        return True
+    else:
+        print_error("Phase 2 Failed")
+        return False
+
+
+def phase_3_validation() -> bool:
+    """Phase 3: The Gatekeeper - Validation of RAW Controls"""
+    print_phase_header("PHASE 3", "The Gatekeeper (Validation of RAW Controls)")
+
+    success, output = run_python_script("scope_validator.py", "Phase 3")
+
     # Load validation report
     validation_report = load_validation_report()
     overall_status = validation_report.get("overall_status", "UNKNOWN")
-    
+
     if success and overall_status == "PASS":
-        print_success("Phase 2 Complete: All validations PASSED")
-        print(f"{Colors.OKGREEN}{Colors.BOLD}✅ QUALITY GATE PASSED - Proceeding to sanitization{Colors.ENDC}")
+        print_success("Phase 3 Complete: All validations PASSED")
+        print(f"{Colors.OKGREEN}{Colors.BOLD}✅ QUALITY GATE PASSED - Proceeding to audit procedures{Colors.ENDC}")
         return True
     else:
-        print_error("Phase 2 Failed: Validation checks failed")
+        print_error("Phase 3 Failed: Validation checks failed")
         print(f"{Colors.FAIL}{Colors.BOLD}🚨 QUALITY GATE FAILED - Pipeline HALTED{Colors.ENDC}")
-        
+
         # Display deficiencies
         if validation_report:
             remediation = validation_report.get("remediation_guidance", [])
@@ -172,78 +203,80 @@ def phase_2_validation() -> bool:
                     print(f"\n{idx}. Missing control for vendor: {rec.get('vendor')}")
                     suggested = rec.get('suggested_control', {})
                     print(f"   Suggested: {suggested.get('Control Activity Description', '')[:100]}...")
-        
+
         print(f"\n{Colors.FAIL}⛔ DO NOT PROCEED until deficiencies are resolved{Colors.ENDC}")
         print("Options:")
         print("  1. Manually add missing controls to none_ex_files/controls.xlsx")
         print("  2. Update none_ex_files/system_description.txt and re-run from Phase 0")
-        print("  3. Re-run Phase 2 after fixes: python scope_validator.py")
-        
+        print("  3. Re-run Phase 3 after fixes: python scope_validator.py")
+
         return False
 
-def phase_3_sanitization_pipeline() -> bool:
-    """Phase 3: Production Factory - Sanitization Pipeline"""
-    print_phase_header("PHASE 3", "Production Factory (Sanitization Pipeline)")
-    
-    # 3.1: Sanitizer
-    print(f"\n{Colors.OKCYAN}[3.1] Running Sanitizer...{Colors.ENDC}")
-    success, _ = run_python_script("automated_sanitizer.py", "Sanitizer")
+
+def phase_4_audit_pipeline() -> bool:
+    """Phase 4: Production Factory – Controls Sanitizer (safety net) + Mapper + Auditor"""
+    print_phase_header("PHASE 4", "Production Factory (Controls Sanitizer + Mapper + Auditor)")
+
+    # 4.1: Controls Sanitizer – algorithmic safety net, no API
+    print(f"\n{Colors.OKCYAN}[4.1] Running Controls Sanitizer (algorithmic safety net)...{Colors.ENDC}")
+    success, _ = run_python_script("automated_sanitizer.py", "Controls Sanitizer")
     if not success:
-        print_error("Sanitizer failed")
+        print_error("Controls Sanitizer failed")
         return False
-    print_success("Sanitizer complete")
-    
-    # 3.2: Mapper (RAG)
-    print(f"\n{Colors.OKCYAN}[3.2] Running Mapper (RAG)...{Colors.ENDC}")
+    print_success("Controls Sanitizer complete")
+
+    # 4.2: Mapper (RAG)
+    print(f"\n{Colors.OKCYAN}[4.2] Running Mapper (RAG)...{Colors.ENDC}")
     success, _ = run_python_script("modul_2_mapper_rag.py", "Mapper")
     if not success:
         print_error("Mapper failed")
         return False
     print_success("Mapper complete")
-    
-    # 3.3: Auditor
-    print(f"\n{Colors.OKCYAN}[3.3] Running Auditor (Procedure Generator)...{Colors.ENDC}")
+
+    # 4.3: Auditor
+    print(f"\n{Colors.OKCYAN}[4.3] Running Auditor (Procedure Generator)...{Colors.ENDC}")
     success, _ = run_python_script("auditor.py", "Auditor")
     if not success:
         print_error("Auditor failed")
         return False
     print_success("Auditor complete")
-    
-    print_success("Phase 3 Complete: Sanitization pipeline finished")
+
+    print_success("Phase 4 Complete: Audit pipeline finished")
     return True
 
 def generate_pipeline_report(start_time: datetime, phases_completed: list):
     """Generate final pipeline execution report."""
     end_time = datetime.now()
     duration = end_time - start_time
-    
+
     print("\n" + "=" * 80)
     print(f"{Colors.HEADER}{Colors.BOLD}PIPELINE EXECUTION REPORT{Colors.ENDC}")
     print("=" * 80)
     print(f"\nStart Time: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"End Time: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Duration: {duration.total_seconds():.2f} seconds")
-    
+
     print(f"\nPhases Completed:")
     for phase in phases_completed:
         print(f"  ✅ {phase}")
-    
+
     print("\nGenerated Files:")
     files = [
-        ("none_ex_files/scope_strategy.json", "Scope strategy from Phase 0"),
-        ("none_ex_files/controls.xlsx", "RAW controls from Phase 1"),
-        ("none_ex_files/scope_validation_report.json", "Validation report from Phase 2"),
-        ("none_ex_files/sanitized_controls.xlsx", "Sanitized controls"),
-        ("none_ex_files/mapped_controls_rag.xlsx", "Mapped controls with TSC"),
-        ("none_ex_files/FINAL_SOC2_AUDIT_ENGLISH.xlsx", "Final audit procedures")
+        ("none_ex_files/system_description_sensitive_map.json", "Sensitive entity map (Phase 0)"),
+        ("none_ex_files/sanitized_system_description.txt", "Sanitized system description (Phase 0)"),
+        ("none_ex_files/scope_strategy.json", "Scope strategy (Phase 1)"),
+        ("none_ex_files/controls.xlsx", "RAW controls (Phase 2)"),
+        ("none_ex_files/scope_validation_report.json", "Validation report (Phase 3)"),
+        ("none_ex_files/mapped_controls_rag.xlsx", "Mapped controls with TSC (Phase 4)"),
+        ("none_ex_files/FINAL_SOC2_AUDIT_ENGLISH.xlsx", "Final audit procedures (Phase 4)")
     ]
-    
+
     for filename, description in files:
         if os.path.exists(filename):
             print(f"  ✅ {filename} - {description}")
         else:
             print(f"  ⚠️  {filename} - Not generated")
-    
+
     print("\n" + "=" * 80)
 
 def main():
@@ -259,33 +292,39 @@ def main():
     phases_completed = []
     
     try:
-        # Phase 0: Scope Assessment
-        if not phase_0_scope_assessment():
+        # Phase 0: Sanitize system description (no API calls)
+        if not phase_0_sanitize_system_description():
             print_error("Pipeline halted at Phase 0")
             sys.exit(1)
-        phases_completed.append("Phase 0: Scope Assessment")
-        
-        # Phase 1: Control Generation
-        if not phase_1_control_generation():
+        phases_completed.append("Phase 0: System Description Sanitizer")
+
+        # Phase 1: Scope Assessment (reads sanitized description)
+        if not phase_1_scope_assessment():
             print_error("Pipeline halted at Phase 1")
             sys.exit(1)
-        phases_completed.append("Phase 1: Control Generation")
-        
-        # Phase 2: Validation (THE GATEKEEPER)
-        if not phase_2_validation():
-            print_error("Pipeline halted at Phase 2 (QUALITY GATE FAILED)")
+        phases_completed.append("Phase 1: Scope Assessment")
+
+        # Phase 2: Control Generation (reads sanitized description)
+        if not phase_2_control_generation():
+            print_error("Pipeline halted at Phase 2")
+            sys.exit(1)
+        phases_completed.append("Phase 2: Control Generation")
+
+        # Phase 3: Validation (THE GATEKEEPER)
+        if not phase_3_validation():
+            print_error("Pipeline halted at Phase 3 (QUALITY GATE FAILED)")
             print("\n" + "=" * 80)
             print(f"{Colors.FAIL}{Colors.BOLD}⛔ PIPELINE STOPPED DUE TO VALIDATION FAILURES{Colors.ENDC}")
             print("=" * 80)
             generate_pipeline_report(start_time, phases_completed)
             sys.exit(1)
-        phases_completed.append("Phase 2: Validation (Quality Gate PASSED)")
-        
-        # Phase 3: Sanitization Pipeline (only if validation passed)
-        if not phase_3_sanitization_pipeline():
-            print_error("Pipeline halted at Phase 3")
+        phases_completed.append("Phase 3: Validation (Quality Gate PASSED)")
+
+        # Phase 4: Audit Pipeline (only if validation passed)
+        if not phase_4_audit_pipeline():
+            print_error("Pipeline halted at Phase 4")
             sys.exit(1)
-        phases_completed.append("Phase 3: Sanitization Pipeline")
+        phases_completed.append("Phase 4: Audit Pipeline (Mapper + Auditor)")
         
         # Success!
         print("\n" + "=" * 80)
