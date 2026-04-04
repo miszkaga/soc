@@ -4,7 +4,6 @@ An AI-powered pipeline that automates the creation of SOC 2 Type II audit docume
 
 ## Privacy-First Design
 
-Real-world SOC 2 system descriptions contain sensitive information: legal entity names, vendor relationships, internal system names, employee roles, and data-centre locations. Sending this raw data to an external LLM API would create a data-sovereignty and confidentiality risk.
 
 The pipeline therefore **sanitizes the system description algorithmically — without any API call — before a single token is sent to OpenAI**. Every downstream LLM phase works only with anonymous placeholders such as `[ORGANIZATION_1]` or `[VENDOR_2]`.
 
@@ -26,15 +25,6 @@ A **local LLM enrichment step (Phase 0.5)** then optionally adds short context l
 | `[ORGANIZATION_1]` | `[ORGANIZATION_1: Cloud infrastructure provider]` |
 | `[ORGANIZATION_3]` | `[ORGANIZATION_3: Customer support ticketing tool]` |
 
-**Quality trade-offs** compared to an LLM-based sanitizer:
-
-| Aspect | Algorithmic (Phase 0) | Enriched (Phase 0.5) | LLM-based |
-|---|---|---|---|
-| Data privacy | ✅ Zero API exposure | ✅ Zero API exposure (local) | ❌ Sends raw text to API |
-| Recall | ⚠️ May miss unusual proper nouns | ⚠️ May miss unusual proper nouns | ✅ Contextually aware |
-| Vendor-specific controls | ⚠️ References `[ORGANIZATION_1]` | ✅ References `[ORGANIZATION_1: Cloud provider]` | ✅ Names the real vendor |
-| Reproducibility | ✅ Deterministic | ⚠️ Varies by model | ⚠️ Varies by temperature |
-| Requires extra software | ✅ No | ⚠️ Ollama (optional, graceful fallback) | ❌ OpenAI subscription |
 
 Phase 0.5 degrades gracefully: if Ollama is not installed the pipeline continues with plain tokens.
 
