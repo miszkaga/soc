@@ -44,9 +44,9 @@ Given a plain-text system description, the pipeline automatically:
 
 1. **Phase 0 – System Description Sanitizer** (`system_description_sanitizer.py`): Algorithmically replaces all sensitive named entities with anonymous tokens. **No API call.** Produces `sanitized_system_description.txt` and `system_description_sensitive_map.json`.
 2. **Phase 0.5 – Semantic Token Enrichment** (`phase_0_5_map_enricher.py`): Enriches blind tokens with short technical context labels using a **local Ollama LLM**. **No external API call.** Produces `enriched_sensitive_map.json` and updates `sanitized_system_description.txt`. *(Optional – pipeline continues without it.)*
-3. **Phase 1 – Scope Assessment** (`scope_assessor.py`): Identifies subservice organisations (vendors) and classifies the reporting method (Carve-Out vs. Inclusive) — operating on the **sanitized/enriched** description.
-4. **Phase 2 – Control Generation** (`rcm_generator.py`): Generates SOC 2 controls aligned with the sanitized description, injecting mandatory vendor monitoring controls for Carve-Out engagements.
-5. **Phase 3 – Scope Validation** (`scope_validator.py`): Quality gate — uses semantic LLM analysis to verify that every required vendor has a monitoring control before proceeding.
+3. **Phase 1 – Scope Assessment** (`scope_assessor.py`): Identifies subservice organisations (vendors) and classifies the reporting method (Carve-Out vs. Inclusive) — operating on the **sanitized/enriched** description. Loads the `vector_index_ssae21` FAISS index to inject authoritative SSAE 21 attestation-standards context (carve-out vs. inclusive definitions) directly into the LLM prompt. Falls back to prompt-only mode if the index is not present.
+4. **Phase 2 – Control Generation** (`rcm_generator.py`): Generates SOC 2 controls aligned with the sanitized description, injecting mandatory vendor monitoring controls for Carve-Out engagements. Loads the `vector_index_tsc` FAISS index to inject official AICPA Trust Services Criteria (CC6, CC8, CC9 Points of Focus) into the LLM prompt, grounding generated controls in exact regulatory requirements. Falls back to prompt-only mode if the index is not present.
+5. **Phase 3 – Scope Validation** (`scope_validator.py`): Quality gate — uses semantic LLM analysis to verify that every required vendor has a monitoring control before proceeding. Loads the `vector_index_ssae21` FAISS index to inject SSAE 21 audit-evidence requirements into the validation prompt, ensuring the quality check is anchored to authoritative standards. Falls back to prompt-only mode if the index is not present.
 6. **Phase 4 – Audit Pipeline**:
    - **4.1 – Controls Sanitizer** (`automated_sanitizer.py`): Algorithmic safety-net pass that re-applies Phase 0 tokens to any control cell that might still carry a sensitive name. **No API call.**
    - **4.2 – Mapper** (`modul_2_mapper_rag.py`): Maps each control to AICPA Trust Services Criteria (TSC) codes and Points of Focus using FAISS-backed RAG.
@@ -74,12 +74,15 @@ System Description (raw, sensitive)
         │
         ▼
 [Phase 1] scope_assessor.py    → scope_strategy.json
+          (RAG: vector_index_ssae21 – SSAE 21 carve-out/inclusive definitions)
         │
         ▼
 [Phase 2] rcm_generator.py     → controls.xlsx (RAW, already uses tokens)
+          (RAG: vector_index_tsc – AICPA TSC control requirements & Points of Focus)
         │
         ▼
 [Phase 3] scope_validator.py   → scope_validation_report.json
+          (RAG: vector_index_ssae21 – SSAE 21 audit evidence requirements)
         │  ⚠️ Pipeline halts here if validation fails
         ▼
 [Phase 4.1] automated_sanitizer.py  → sanitized_controls.xlsx (NO API)
