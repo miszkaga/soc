@@ -17,11 +17,27 @@ import sys
 from openai import OpenAI
 from typing import Dict, List, Optional
 from config import OPENAI_API_KEY, SOC2_MODEL
+import rag_utils
 
 sys.stdout.reconfigure(encoding='utf-8')
 
 # Configuration
 client = OpenAI(api_key=OPENAI_API_KEY)
+
+# Attempt to load the SSAE 21 domain vector index once at module level so that
+# the KB is shared across all calls without being reloaded on every function
+# invocation.  Falls back gracefully if the index has not been built yet.
+_SSAE21_INDEX_NAME = "vector_index_ssae21"
+_kb_ssae21 = None
+try:
+    _kb_ssae21 = rag_utils.load_specific_knowledge_base(_SSAE21_INDEX_NAME)
+    print(f"✓ RAG: Loaded '{_SSAE21_INDEX_NAME}' knowledge base for Phase 1.")
+except FileNotFoundError:
+    print(
+        f"⚠️  RAG: '{_SSAE21_INDEX_NAME}' index not found. "
+        f"Run prepare_vectors.py to enable authoritative SSAE 21 context. "
+        f"Falling back to prompt-only mode."
+    )
 
 # File paths
 _SANITIZED_FILE = "none_ex_files/sanitized_system_description.txt"
@@ -97,13 +113,34 @@ Return your analysis as valid JSON with this structure:
 def classify_reporting_method(description: str, vendors: List[Dict]) -> Dict:
     """
     Classify the reporting method (Carve-out vs Inclusive) using semantic heuristics.
+    When the SSAE 21 vector index is available, authoritative AICPA context is
+    retrieved and injected into the prompt to improve accuracy.
     """
     vendor_names = [v["vendor_name"] for v in vendors]
     vendor_list_str = ", ".join(vendor_names) if vendor_names else "None identified"
-    
+
+    # RAG: retrieve authoritative SSAE 21 guidance when the index is available.
+    rag_section = ""
+    if _kb_ssae21 is not None:
+        try:
+            context = rag_utils.get_phase_context(
+                _kb_ssae21,
+                "SSAE 21 definitions for subservice organization carve-out method vs inclusive method",
+                k=3,
+            )
+            rag_section = f"""
+OFFICIAL SSAE 21 GUIDANCE (retrieved from authoritative source):
+{context}
+
+Use the guidance above as the authoritative reference for your classification.
+"""
+        except Exception as rag_err:
+            print(f"⚠️  RAG query failed (non-fatal): {rag_err}")
+
     prompt = f"""
 {AUDITOR_PERSONA}
 
+{rag_section}
 Based on the system description, classify the reporting method for subservice 
 organizations under SSAE 21 standards.
 

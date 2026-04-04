@@ -4,6 +4,8 @@ import json
 import os
 from config import OPENAI_API_KEY, SOC2_MODEL
 import sys
+import rag_utils
+
 sys.stdout.reconfigure(encoding='utf-8')
 
 # Initialize client
@@ -13,6 +15,20 @@ _SANITIZED_DESC_FILE = "none_ex_files/sanitized_system_description.txt"
 _ORIGINAL_DESC_FILE = "none_ex_files/system_description.txt"
 SCOPE_STRATEGY_FILE = "none_ex_files/scope_strategy.json"
 OUTPUT_FILE = "none_ex_files/controls.xlsx"
+
+# Attempt to load the TSC domain vector index once at module level.
+# Falls back gracefully when the index has not yet been built.
+_TSC_INDEX_NAME = "vector_index_tsc"
+_kb_tsc = None
+try:
+    _kb_tsc = rag_utils.load_specific_knowledge_base(_TSC_INDEX_NAME)
+    print(f"✓ RAG: Loaded '{_TSC_INDEX_NAME}' knowledge base for Phase 2.")
+except FileNotFoundError:
+    print(
+        f"⚠️  RAG: '{_TSC_INDEX_NAME}' index not found. "
+        f"Run prepare_vectors.py to enable authoritative TSC context. "
+        f"Falling back to prompt-only mode."
+    )
 
 def load_scope_strategy():
     """Load scope strategy from Phase 0 if it exists."""
@@ -26,6 +42,7 @@ def generate_controls_from_desc(description_text, scope_strategy=None):
     """
     Generates SOC 2 controls that specifically align with the System Description.
     NOW SCOPE-AWARE: If scope_strategy is provided, generates required vendor controls.
+    RAG-ENHANCED: Injects authoritative AICPA TSC context when the index is available.
     """
     
     # Base system prompt
@@ -57,6 +74,30 @@ def generate_controls_from_desc(description_text, scope_strategy=None):
       ]
     }
     """
+
+    # RAG: retrieve authoritative TSC guidance when the index is available.
+    if _kb_tsc is not None:
+        try:
+            is_carveout = (
+                scope_strategy is not None
+                and scope_strategy.get("reporting_method", {}).get("classification") == "CARVE_OUT"
+            )
+            rag_query = (
+                "Requirements and points of focus for Logical Access CC6, Change Management CC8"
+            )
+            if is_carveout:
+                rag_query += ", and Subservice Organization Vendor Monitoring CC9.2"
+
+            rag_context = rag_utils.get_phase_context(_kb_tsc, rag_query, k=5)
+            system_prompt += f"""
+
+    OFFICIAL AICPA TRUST SERVICES CRITERIA TO ENFORCE:
+    {rag_context}
+
+    Generate controls that align exactly with the criteria provided above.
+    """
+        except Exception as rag_err:
+            print(f"⚠️  RAG query failed (non-fatal): {rag_err}")
     
     # SCOPE-AWARE ENHANCEMENT: Add vendor-specific requirements
     if scope_strategy:

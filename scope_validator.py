@@ -15,6 +15,7 @@ import pandas as pd
 from openai import OpenAI
 from typing import Dict, List
 from config import OPENAI_API_KEY, SOC2_MODEL
+import rag_utils
 
 # Windows console encoding fix
 sys.stdout.reconfigure(encoding='utf-8')
@@ -25,6 +26,20 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 SCOPE_STRATEGY_FILE = "none_ex_files/scope_strategy.json"
 CONTROLS_FILE = "none_ex_files/controls.xlsx"
 OUTPUT_FILE = "none_ex_files/scope_validation_report.json"
+
+# Attempt to load the SSAE 21 domain vector index once at module level.
+# Falls back gracefully when the index has not yet been built.
+_SSAE21_INDEX_NAME = "vector_index_ssae21"
+_kb_ssae21 = None
+try:
+    _kb_ssae21 = rag_utils.load_specific_knowledge_base(_SSAE21_INDEX_NAME)
+    print(f"✓ RAG: Loaded '{_SSAE21_INDEX_NAME}' knowledge base for Phase 3.")
+except FileNotFoundError:
+    print(
+        f"⚠️  RAG: '{_SSAE21_INDEX_NAME}' index not found. "
+        f"Run prepare_vectors.py to enable authoritative SSAE 21 context. "
+        f"Falling back to prompt-only mode."
+    )
 
 def load_data():
     if not os.path.exists(SCOPE_STRATEGY_FILE):
@@ -41,12 +56,33 @@ def load_data():
 def validate_with_llm(vendors: List[Dict], controls_text: str) -> Dict:
     """
     Asks the LLM to act as the Judge.
+    RAG-ENHANCED: Injects authoritative SSAE 21 audit-evidence context when the
+    vector index is available.
     """
     vendor_names = [v["vendor_name"] for v in vendors]
 
+    # RAG: retrieve authoritative audit-evidence guidance when available.
+    rag_section = ""
+    if _kb_ssae21 is not None:
+        try:
+            context = rag_utils.get_phase_context(
+                _kb_ssae21,
+                "Audit evidence requirements for validating subservice organization monitoring and CC9.2",
+                k=3,
+            )
+            rag_section = f"""
+OFFICIAL SSAE 21 AUDIT EVIDENCE REQUIREMENTS (retrieved from authoritative source):
+{context}
+
+Apply the evidence requirements above when evaluating whether each vendor control is sufficient.
+"""
+        except Exception as rag_err:
+            print(f"⚠️  RAG query failed (non-fatal): {rag_err}")
+
     prompt = f"""
     You are a SOC 2 Quality Assurance Auditor.
-    
+
+    {rag_section}
     TASK:
     Verify if the provided 'Control Matrix' contains specific monitoring controls for the required 'Vendors'.
     
