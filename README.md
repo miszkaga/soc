@@ -143,7 +143,17 @@ Before running the pipeline for the first time, build the FAISS knowledge base f
 python prepare_vectors.py
 ```
 
-This creates the `soc2_vector_index/` directory used by the RAG mapper in Phase 4.2.
+This creates three FAISS vector index directories:
+- `soc2_vector_index/` – legacy monolithic index used by Phase 4.2 (RAG mapper)
+- `vector_index_ssae21/` – SSAE 21 attestation-standards index used by Phases 1 & 3
+- `vector_index_tsc/` – AICPA Trust Services Criteria index used by Phase 2
+
+PDFs are routed into the domain-specific indices automatically based on their filename:
+PDFs containing `ssae`, `standards`, or `attestation` in the name → `vector_index_ssae21`;
+PDFs containing `tsc`, `criteria`, or `trust` → `vector_index_tsc`.
+All PDFs also contribute to the monolithic `soc2_vector_index`.
+
+Place your AICPA PDF documents in `pdf_docs/` before running the script.
 
 ## Usage
 
